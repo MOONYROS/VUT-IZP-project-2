@@ -54,3 +54,4 @@ dkms.conf
 bin/
 doxygen/
 obj/
+*.cbp
