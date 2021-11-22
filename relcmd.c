@@ -5,22 +5,22 @@
 
 #include "relcmd.h"
 
-void cmdReflexive(TRelationItem *rel)
+void cmdReflexive(TRelationItem *rel) /// Ondra
 {
 
 }
 
-void cmdSymmetric(TRelationItem *rel)
+void cmdSymmetric(TRelationItem *rel) /// Petana
 {
 
 }
 
-void cmdAntisymmetric(TRelationItem *rel)
+void cmdAntisymmetric(TRelationItem *rel) /// mikki
 {
 
 }
 
-void cmdTransitive(TRelationItem *rel)
+void cmdTransitive(TRelationItem *rel)  /// Ondra
 {
 
 }
@@ -49,7 +49,7 @@ void cmdFunction(TRelationItem *rel)
     printf("true\n");
 }
 
-void cmdDomain(TRelationItem *rel, TWordListItem **resSet)
+void cmdDomain(TRelationItem *rel, TWordListItem **resSet) /// Petana
 {
     assert(resSet != NULL);
 
@@ -73,17 +73,17 @@ void cmdCodomain(TRelationItem *rel, TWordListItem **resSet)
     printSet(*resSet);
 }
 
-void cmdInjective(TRelationItem *rel)
+void cmdInjective(TRelationItem *rel)   /// Petana
 {
 
 }
 
-void cmdSurjective(TRelationItem *rel)
+void cmdSurjective(TRelationItem *rel)  /// mikki
 {
 
 }
 
-void cmdBijective(TRelationItem *rel)
+void cmdBijective(TRelationItem *rel) /// Ondra
 {
 
 }
