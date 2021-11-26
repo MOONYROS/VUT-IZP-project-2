@@ -32,7 +32,13 @@ void cmdComplement(TWordListItem *set1, TWordListItem **resSet) /// Petana
     assert(resSet != NULL);
 
 }
-
+/** cmdUnion tiske sjednoceni mnozin set1 a set2
+ * 
+ * \param set1 je ukazatel na prvni mnozinu
+ * \param set2 je ukazatel na druhou mnozinu
+ * \param resSet je ukazatel na ukazatel, do ktereho je ulozena vysledna mnozina
+ * 
+ */
 void cmdUnion(TWordListItem *set1, TWordListItem *set2, TWordListItem **resSet) /// mikki
 {
     assert(resSet != NULL);
