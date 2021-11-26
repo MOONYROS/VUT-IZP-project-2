@@ -32,6 +32,7 @@ void cmdComplement(TWordListItem *set1, TWordListItem **resSet) /// Petana
     assert(resSet != NULL);
 
 }
+
 /** cmdUnion tiske sjednoceni mnozin set1 a set2
  * 
  * \param set1 je ukazatel na prvni mnozinu
@@ -42,7 +43,7 @@ void cmdComplement(TWordListItem *set1, TWordListItem **resSet) /// Petana
 void cmdUnion(TWordListItem *set1, TWordListItem *set2, TWordListItem **resSet) /// mikki
 {
     assert(resSet != NULL);
-
+     
 }
 
 /** cmdIntersect tiskne prunik mnozin set1 a set2
@@ -121,8 +122,27 @@ void cmdSubset(TWordListItem *set1, TWordListItem *set2)    /// Petana
 {
 
 }
-
+/** cmdEquals tiskne true nebo false, jestli jsou mnoziny rovny
+ * 
+ * \param set1 ukazatel na prvni mnozinu
+ * \param set2 ukazatel na druhou mnozinu
+ * 
+ */
 void cmdEquals(TWordListItem *set1, TWordListItem *set2)    /// mikki
 {
-
+    int isSame=0;
+    while(set1 != NULL){
+        while(set2 != NULL){
+            if(strcmp(set1->name, set2->name)==0){
+                isSame=1;
+            }
+            set2=set2->next;
+        }
+        set1=set1->next;
+    }
+    if(isSame==1){
+            printf("true\n");
+    }else{
+        printf("false\n");
+    }
 }
