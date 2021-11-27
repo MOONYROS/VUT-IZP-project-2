@@ -26,15 +26,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <stdbool.h>
 
 #include "setcal_common.h"
 #include "setcmd.h"
 #include "relcmd.h"
-
-#define MAX_ITEM_LEN 30
-#define MAX_LINES 1000
-#define LINES_ALLOC_SIZE 3
-#define UNIVERSUM_LINE 1
 
 #define ERR_OK 0
 #define ERR_NR_ARG 1
@@ -42,7 +38,7 @@
 #define ERR_FCLOSE 3
 //#define ERR_WRONG_CHAR 4
 #define ERR_LAST_LINE_CHARS 5
-#define ERR_MALLOC_LINES 6
+#define ERR_MALLOC 6
 //#define ERR_PROCESS_LINE 7
 #define ERR_EMPTY_LINE 8
 #define ERR_UKNOWN_COMMAND 9
@@ -79,9 +75,24 @@ void addRelationItem(TRelationItem **prel, char *name1, char *name2)
 
     TRelationItem *next = *prel;
     *prel = malloc(sizeof(TRelationItem));
+    if(*prel == NULL)
+    {
+        fprintf(stderr, "ERROR: Nepodarilo se alokovat dostatek mista v pameti.\n");
+        exit(ERR_MALLOC);
+    }
     (*prel)->name1 = malloc(strlen(name1)+1);
+    if((*prel)->name1 == NULL)
+    {
+        fprintf(stderr, "ERROR: Nepodarilo se alokovat dostatek mista v pameti.\n");
+        exit(ERR_MALLOC);
+    }
     strcpy((*prel)->name1, name1);
     (*prel)->name2 = malloc(strlen(name2)+1);
+    if((*prel)->name2 == NULL)
+    {
+        fprintf(stderr, "ERROR: Nepodarilo se alokovat dostatek mista v pameti.\n");
+        exit(ERR_MALLOC);
+    }
     strcpy((*prel)->name2, name2);
     (*prel)->next = next;
 }
@@ -141,6 +152,25 @@ void freeWordList(TWordListItem *item)
     }
 }
 
+/** freeRelationList uvolni pamet z celeho seznamu TRelationItem, vcetne retezcu o kterych predpoklada, ze jsou alokovane dynamicky
+ *
+ * \param item je ukazatel na prvni prvek seznamu
+ *
+ */
+void freeRelationList(TRelationItem *item)
+{
+    TRelationItem *tmpItem;
+
+    while(item != NULL)
+    {
+        tmpItem = item;
+        item = item->next;
+        free(tmpItem->name1);
+        free(tmpItem->name2);
+        free(tmpItem);
+    }
+}
+
 /** hasOnlyEnLetters zkontorluje, jestli retezec obsahuje pouze mala a velka pismena anglicke abecedy
  *
  * \param str je retezec, ktery se ma zkontrolovat
@@ -159,6 +189,19 @@ int hasOnlyEnLetters(char *str)
     return 1;
 }
 
+int strInArray(char *str, char *arr[], int arrSize)
+{
+    for(size_t i = 0; i < arrSize; i++)
+    {
+        //printf("%d %s\n", i, *(relCmds+i));
+        if(strcmp(arr[i], str) == 0)
+        {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 /** strInSetCmds1 zjisti, jesli se retezec str vyskytouje mezi mnozinovymi prikazy s 1 operandem
  *
  * \param str je hledany retezec
@@ -169,6 +212,8 @@ int strInSetCmds1(char *str)
 {
     char *setCmds1[] = {"empty", "card", "complement"};
 
+    return strInArray(str, setCmds1, sizeof(setCmds1)/sizeof(char*));
+    /*
     for(size_t i=0; i<sizeof(setCmds1)/sizeof(char*); i++)
     {
         //printf("%d %s\n", i, *(setCmds1+i));
@@ -177,7 +222,7 @@ int strInSetCmds1(char *str)
             return 1;
         }
     }
-    return 0;
+    return 0;*/
 }
 
 /** strInSetCmds2 zjisti, jesli se retezec str vyskytouje mezi mnozinovymi prikazy se 2 operandy
@@ -190,7 +235,8 @@ int strInSetCmds2(char *str)
 {
     char *setCmds2[] = {"union", "intersect", "minus", "subseteq", "subset", "equals"};
 
-    for(size_t i=0; i<sizeof(setCmds2)/sizeof(char*); i++)
+    return strInArray(str, setCmds2, sizeof(setCmds2)/sizeof(char*));
+    /*for(size_t i=0; i<sizeof(setCmds2)/sizeof(char*); i++)
     {
         //printf("%d %s\n", i, *(setCmds2+i));
         if(strcmp(*(setCmds2+i), str) == 0)
@@ -198,21 +244,22 @@ int strInSetCmds2(char *str)
             return 1;
         }
     }
-    return 0;
+    return 0;*/
 }
 
-/** strInRelCmds zjisti, jesli se retezec str vyskytouje mezi relacnimi prikazy
+/** strInRelCmds1 zjisti, jesli se retezec str vyskytouje mezi relacnimi prikazy s jednim operandem
  *
  * \param str je hledany retezec
  * \return vraci 1, kdyz je retezec mezi prikazy nalezen, jinak 0
  *
  */
-int strInRelCmds(char *str)
+int strInRelCmds1(char *str)
 {
-    char *relCmds[] = {"reflexive", "symmetric", "antisymmetric", "transitive", "function",
-                       "domain", "codomain", "injective", "surjective", "bijective"};
+    char *relCmds1[] = {"reflexive", "symmetric", "antisymmetric", "transitive", "function",
+                       "domain", "codomain"};
 
-    for(size_t i=0; i<sizeof(relCmds)/sizeof(char*); i++)
+    return strInArray(str, relCmds1, sizeof(relCmds1)/sizeof(char*));
+    /*for(size_t i=0; i<sizeof(relCmds)/sizeof(char*); i++)
     {
         //printf("%d %s\n", i, *(relCmds+i));
         if(strcmp(*(relCmds+i), str) == 0)
@@ -220,8 +267,31 @@ int strInRelCmds(char *str)
             return 1;
         }
     }
-    return 0;
+    return 0;*/
 }
+
+/** strInRelCmds3 zjisti, jesli se retezec str vyskytouje mezi relacnimi prikazy se tremi operandy
+ *
+ * \param str je hledany retezec
+ * \return vraci 1, kdyz je retezec mezi prikazy nalezen, jinak 0
+ *
+ */
+int strInRelCmds3(char *str)
+{
+    char *relCmds3[] = {"injective", "surjective", "bijective"};
+
+    return strInArray(str, relCmds3, sizeof(relCmds3)/sizeof(char*));
+    /*for(size_t i=0; i<sizeof(relCmds)/sizeof(char*); i++)
+    {
+        //printf("%d %s\n", i, *(relCmds+i));
+        if(strcmp(*(relCmds+i), str) == 0)
+        {
+            return 1;
+        }
+    }
+    return 0;*/
+}
+
 
 /** printAllLines vytiskne vsechny seznamy ze vsech radku
  *
@@ -255,13 +325,20 @@ void printAllLines(TLine *line, int lineNr)
         if(line[i].command != NULL)
         {
             printf("%4d: ", i+1);
-            if(strInSetCmds1(line[i].command->name) == 1 || strInRelCmds(line[i].command->name) == 1)
+            if(strInSetCmds1(line[i].command->name) == 1 || strInRelCmds1(line[i].command->name) == 1)
             {
-                printf("C %s %d\n", line[i].command->name, line[i].command->op1);
+                printf("C %s %d\n", line[i].command->name, line[i].command->op[0]);
             }
             else
             {
-                printf("C %s %d %d\n", line[i].command->name, line[i].command->op1, line[i].command->op2);
+                if(strInSetCmds2(line[i].command->name) == 1)
+                {
+                    printf("C %s %d %d\n", line[i].command->name, line[i].command->op[0], line[i].command->op[1]);
+                }
+                else
+                {
+                    printf("C %s %d %d %d\n", line[i].command->name, line[i].command->op[0], line[i].command->op[1], line[i].command->op[2]);
+                }
             }
         }
         if(line[i].set == NULL && line[i].relation == NULL && line[i].command == NULL)
@@ -270,6 +347,23 @@ void printAllLines(TLine *line, int lineNr)
         }
 
     }
+}
+
+/** freeAllLines uvolni vsechny seznamy ze vsech radku a nakonec i pole radku
+ *
+ * \param line je ukazatel na pole radku
+ * \param lineNr je pocet platnych radku v poli
+ *
+ */
+void freeAllLines(TLine *line, int lineNr)
+{
+    for(int i = 0; i < lineNr; i++)
+    {
+        freeWordList(line[i].set);
+        freeRelationList(line[i].relation);
+        free(line[i].command);
+    }
+    free(line);
 }
 
 /** processLine zpracuje tokeny z nacteneho radku
@@ -307,7 +401,7 @@ int processLine(TWordListItem *token, int lineNr, int *wasCommand, TLine *line)
                     fprintf(stderr, "ERROR: Vadny znak v prvku. Prvky musi obsahova jen mala a velka pismena anglicke abecedy!\n");
                     return PL_ERR_INVALID_CHAR;
                 }
-                if(strInSetCmds1(token->name) == 1 || strInSetCmds2(token->name) == 1 || strInRelCmds(token->name) == 1 || strcmp("true", token->name) == 0 || strcmp("false", token->name) == 0)
+                if(strInSetCmds1(token->name) == 1 || strInSetCmds2(token->name) == 1 || strInRelCmds1(token->name) == 1 || strInRelCmds3(token->name) == 1 || strcmp("true", token->name) == 0 || strcmp("false", token->name) == 0)
                 {
                     fprintf(stderr, "ERROR: Prvek je obsazeny v prikazech!\n");
                     return PL_ERR_ITEM_IN_COMMANDS;
@@ -421,8 +515,11 @@ int processLine(TWordListItem *token, int lineNr, int *wasCommand, TLine *line)
             *wasCommand = 1;
             token=token->next;
             int param = 0;
-            int line1;
-            int line2;
+            int op[MAX_LINE_PARAMS];
+            for(int i = 0; i < MAX_LINE_PARAMS; i++)
+            {
+                op[i] = 0;
+            }
             char command[MAX_ITEM_LEN + 1];
 
             while(token != NULL)
@@ -433,31 +530,22 @@ int processLine(TWordListItem *token, int lineNr, int *wasCommand, TLine *line)
                         strcpy(command, token->name);
                         break;
                     case 1:
-                        if(sscanf(token->name, "%d", &line1) != 1)
-                        {
-                            fprintf(stderr, "ERROR: Parametr prikazu neni cislo!\n");
-                            return PL_ERR_BAD_CMD_PARAM;
-                        }
-                        if(line1<1 || line1>MAX_LINES)
-                        {
-                            fprintf(stderr, "ERROR: Parametr prikazu {radek) je mimo rozsah 1-1000!\n");
-                            return PL_ERR_BAD_CMD_PARAM;
-                        }
-                        break;
                     case 2:
-                        if(sscanf(token->name, "%d", &line2) != 1)
+                    case 3:
+                    case 4:
+                        if(sscanf(token->name, "%d", &op[param - 1]) != 1)
                         {
                             fprintf(stderr, "ERROR: Parametr prikazu neni cislo!\n");
                             return PL_ERR_BAD_CMD_PARAM;
                         }
-                        if(line2<1 || line2>MAX_LINES)
+                        if(op[param - 1] < 1 || op[param - 1] > MAX_LINES)
                         {
-                            fprintf(stderr, "ERROR: Parametr prikazu {radek) je mimo rozsah 1-1000!\n");
+                            fprintf(stderr, "ERROR: Parametr prikazu (radek) je mimo rozsah 1-1000!\n");
                             return PL_ERR_BAD_CMD_PARAM;
                         }
                         break;
                     default:
-                        fprintf(stderr, "ERROR: Prikaz ma vice nez 2 parametry!\n");
+                        fprintf(stderr, "ERROR: Prikaz ma vice nez 4 parametry!\n");
                         return PL_ERR_INVALID_CMD;
                 }
                 param++;
@@ -467,17 +555,19 @@ int processLine(TWordListItem *token, int lineNr, int *wasCommand, TLine *line)
             if(line[lineNr-1].command ==  NULL)
             {
                 fprintf(stderr, "ERROR: Nelze alokovat pamet pro ulozeni prikazu!\n");
-                return PL_ERR_MALLOC_CMD;
+                exit(ERR_MALLOC);
             }
             line[lineNr-1].command->name = malloc(strlen(command)+1);
             if(line[lineNr-1].command->name ==  NULL)
             {
                 fprintf(stderr, "ERROR: Nelze alokovat pamet pro ulozeni jmena prikazu!\n");
-                return PL_ERR_MALLOC_CMD;
+                exit(ERR_MALLOC);
             }
             strcpy(line[lineNr-1].command->name, command);
-            line[lineNr-1].command->op1 = line1;
-            line[lineNr-1].command->op2 = line2;
+            for(int i = 0; i < MAX_LINE_PARAMS; i++)
+            {
+                line[lineNr-1].command->op[i] = op[i];
+            }
             //printf("Command: %s %d %d\n", line[lineNr-1].command->name, line[lineNr-1].command->op1, line[lineNr-1].command->op2);
             break;
         default:
@@ -535,6 +625,11 @@ TWordListItem * getLineFromFile(FILE *fp)
             if(tokenList==NULL)
             {
                 tokenList = malloc(sizeof(TWordListItem));
+                if(tokenList == NULL)
+                {
+                    fprintf(stderr, "ERROR: Nepodarilo se alokovat dostatek mista v pameti.\n");
+                    exit(ERR_MALLOC);
+                }
                 tmpTokenList = tokenList;
             }
             else
@@ -545,6 +640,11 @@ TWordListItem * getLineFromFile(FILE *fp)
                     tmpTokenList = tmpTokenList->next;
                 }
                 tmpTokenList->next = malloc(sizeof(TWordListItem));
+                if(tmpTokenList->next == NULL)
+                {
+                    fprintf(stderr, "ERROR: Nepodarilo se alokovat dostatek mista v pameti.\n");
+                    exit(ERR_MALLOC);
+                }
                 tmpTokenList = tmpTokenList->next;
             }
             // kontrola jestli se povedl zalozit novy token
@@ -555,10 +655,10 @@ TWordListItem * getLineFromFile(FILE *fp)
             }
             // zalozit retezec, opet zkontrolovat a naplnit daty
             tmpTokenList->name = malloc(strlen(token)+1);
-            if( tmpTokenList==NULL )
+            if( tmpTokenList == NULL )
             {
                 fprintf(stderr, "ERROR: Nepodarilo se alokovat pamet pro retezec v novem tokenu!\n");
-                return NULL;
+                exit(ERR_MALLOC);
             }
             strcpy(tmpTokenList->name, token);
             tmpTokenList->next = NULL;
@@ -609,25 +709,46 @@ int processCommands(TLine *line, int lineNr)
         if(line[ln].command != NULL)
         {
             strcpy(command, line[ln].command->name);
-            int operand1 = line[ln].command->op1;
+            int operand1 = line[ln].command->op[0];
             if(operand1 > lineNr)
             {
                 fprintf(stderr, "ERROR: Prikaz pro neexistujici radek!\n");
                 return ERR_CMD_LINE_NOEX;
             }
-            int operand2 = line[ln].command->op2;
+            int operand2 = line[ln].command->op[1];
             if(operand2 > lineNr)
             {
-                if(strInSetCmds2(command) == 1) // druhy operand nas zajima jen pokud mame prikaz pro 2 operandy
+                if(strInSetCmds2(command) == 1 || strInRelCmds3(command) == 1) // druhy operand nas zajima jen pokud mame prikaz pro 2 operandy
                 {
                     fprintf(stderr, "ERROR: Prikaz pro neexistujici radek!\n");
                     return ERR_CMD_LINE_NOEX;
                 }
             }
+            int operand3 = line[ln].command->op[2];
+            if(operand3 > lineNr)
+            {
+                if(strInRelCmds3(command) == 1) // treti operand nas zajima jen pokud mame prikaz pro 3 operandy
+                {
+                    fprintf(stderr, "ERROR: Prikaz pro neexistujici radek!\n");
+                    return ERR_CMD_LINE_NOEX;
+                }
+            }
+            int operand4 = line[ln].command->op[3];
             // Set commands
             if(strcmp(command, "empty") == 0)
             {
-                cmdEmpty(line[operand1-1].set);
+                if(!cmdEmpty(line[operand1-1].set))
+                {
+                    if(operand2 >= lineNr)
+                    {
+                        fprintf(stderr, "ERROR: Skok na neexistujici radek!\n");
+                        return ERR_CMD_LINE_NOEX;
+                    }
+                    if(operand2 > 0)
+                    {
+                        ln = operand2 - 2;
+                    }
+                }
                 continue;
             }
             if(strcmp(command, "card") == 0)
@@ -657,17 +778,50 @@ int processCommands(TLine *line, int lineNr)
             }
             if(strcmp(command, "subseteq") == 0)
             {
-                cmdSubseteq(line[operand1-1].set, line[operand2-1].set);
+                if(!cmdSubseteq(line[operand1-1].set, line[operand2-1].set))
+                {
+                    if(operand3 >= lineNr)
+                    {
+                        fprintf(stderr, "ERROR: Skok na neexistujici radek!\n");
+                        return ERR_CMD_LINE_NOEX;
+                    }
+                    if(operand3 > 0)
+                    {
+                        ln = operand3 - 2;
+                    }
+                }
                 continue;
             }
             if(strcmp(command, "subset") == 0)
             {
-                cmdSubset(line[operand1-1].set, line[operand2-1].set);
+                if(!cmdSubset(line[operand1-1].set, line[operand2-1].set))
+                {
+                    if(operand3 >= lineNr)
+                    {
+                        fprintf(stderr, "ERROR: Skok na neexistujici radek!\n");
+                        return ERR_CMD_LINE_NOEX;
+                    }
+                    if(operand3 > 0)
+                    {
+                        ln = operand3 - 2;
+                    }
+                }
                 continue;
             }
             if(strcmp(command, "equals") == 0)
             {
-                cmdEquals(line[operand1-1].set, line[operand2-1].set);
+                if(!cmdEquals(line[operand1-1].set, line[operand2-1].set))
+                {
+                    if(operand3 >= lineNr)
+                    {
+                        fprintf(stderr, "ERROR: Skok na neexistujici radek!\n");
+                        return ERR_CMD_LINE_NOEX;
+                    }
+                    if(operand3 > 0)
+                    {
+                        ln = operand3 - 2;
+                    }
+                }
                 continue;
             }
 
@@ -694,7 +848,18 @@ int processCommands(TLine *line, int lineNr)
             }
             if(strcmp(command, "function") == 0)
             {
-                cmdFunction(line[operand1-1].relation);
+                if(!cmdFunction(line[operand1-1].relation))
+                {
+                    if(operand2 >= lineNr)
+                    {
+                        fprintf(stderr, "ERROR: Skok na neexistujici radek!\n");
+                        return ERR_CMD_LINE_NOEX;
+                    }
+                    if(operand2 > 0)
+                    {
+                        ln = operand2 - 2;
+                    }
+                }
                 continue;
             }
             if(strcmp(command, "domain") == 0)
@@ -709,17 +874,50 @@ int processCommands(TLine *line, int lineNr)
             }
             if(strcmp(command, "injective") == 0)
             {
-                cmdInjective(line[operand1-1].relation);
+                if(!cmdInjective(line[operand1-1].relation, line[operand2-1].set, line[operand3-1].set))
+                {
+                    if(operand4 >= lineNr)
+                    {
+                        fprintf(stderr, "ERROR: Skok na neexistujici radek!\n");
+                        return ERR_CMD_LINE_NOEX;
+                    }
+                    if(operand4 > 0)
+                    {
+                        ln = operand4 - 2; /**< skok na radek operand4 */
+                    }
+                }
                 continue;
             }
             if(strcmp(command, "surjective") == 0)
             {
-                cmdSurjective(line[operand1-1].relation);
+                if(!cmdSurjective(line[operand1-1].relation, line[operand2-1].set, line[operand3-1].set))
+                {
+                    if(operand4 >= lineNr)
+                    {
+                        fprintf(stderr, "ERROR: Skok na neexistujici radek!\n");
+                        return ERR_CMD_LINE_NOEX;
+                    }
+                    if(operand4 > 0)
+                    {
+                        ln = operand4 - 2; /**< skok na radek operand4 */
+                    }
+                }
                 continue;
             }
             if(strcmp(command, "bijective") == 0)
             {
-                cmdBijective(line[operand1-1].relation);
+                if(!cmdBijective(line[operand1-1].relation, line[operand2-1].set, line[operand3-1].set))
+                {
+                    if(operand4 >= lineNr)
+                    {
+                        fprintf(stderr, "ERROR: Skok na neexistujici radek!\n");
+                        return ERR_CMD_LINE_NOEX;
+                    }
+                    if(operand4 > 0)
+                    {
+                        ln = operand4 - 2; /**< skok na radek operand4 */
+                    }
+                }
                 continue;
             }
             fprintf(stderr, "ERROR: Neznamy prikaz!\n");
@@ -750,12 +948,12 @@ int processFile(char *fileName)
         // definujeme a vytvorime vynulovane pole s informacemi pro max 1000 (MAX_LINES) radku vstupniho souboru
         TLine *line;
         line = malloc(sizeof(TLine) * allocatedLines);
-        memset(line, 0, sizeof(TLine) * allocatedLines);
         if(line == NULL)
         {
             fprintf(stderr, "ERROR: Nepodarilo se alokovat dostatek pameti pro pole radku!\n");
-            return ERR_MALLOC_LINES;
+            exit(ERR_MALLOC);
         }
+        memset(line, 0, sizeof(TLine) * allocatedLines);
 
         // prochazi cely soubor
         do
@@ -766,6 +964,7 @@ int processFile(char *fileName)
                 if(feof(fp))
                 {
                     // neco se nacetlo, ale jsme na konci souboru, takze radek nebyl ukonceny \n a to je chyba
+                    freeAllLines(line, lineNr);
                     return ERR_LAST_LINE_CHARS;
                 }
                 lineNr++;
@@ -776,7 +975,7 @@ int processFile(char *fileName)
                     if(line == NULL)
                     {
                         fprintf(stderr, "ERROR: Nepodarilo se alokovat dostatek pameti pro pole radku!\n");
-                        return ERR_MALLOC_LINES;
+                        exit(ERR_MALLOC);
                     }
                     memset(line + allocatedLines - LINES_ALLOC_SIZE, 0, sizeof(TLine) * LINES_ALLOC_SIZE);
                 }
@@ -785,6 +984,7 @@ int processFile(char *fileName)
                 freeWordList(token);
                 if( err != 0 )
                 {
+                    freeAllLines(line, lineNr);
                     return err;
                 }
             }
@@ -796,6 +996,7 @@ int processFile(char *fileName)
                     break;
                 }
                 fprintf(stderr, "Nepodarilo se nacist vstupni radek nebo je prazdny!");
+                freeAllLines(line, lineNr);
                 return ERR_EMPTY_LINE;
             }
         } while (!feof(fp));
@@ -803,6 +1004,7 @@ int processFile(char *fileName)
         if(fclose(fp) != 0)
         {
             fprintf(stderr, "Nepodarilo se zavrit vstupni soubor!");
+            freeAllLines(line, lineNr);
             return ERR_FCLOSE;
         }
 
@@ -810,14 +1012,14 @@ int processFile(char *fileName)
 
         printf("\n... a to je konec programu\ntohle mame v pameti radku:\n\n");
         printAllLines(line, lineNr);
-        // aaa tady se musi smazat vsechny naalokovane struktury
+
+        freeAllLines(line, lineNr);
     }
     else
     {
         fprintf(stderr, "Nepodarilo se otevrit vstupni soubor! Chyba %s\n", strerror(errno));
         return ERR_FOPEN;
     }
-
     return ERR_OK;
 }
 

@@ -2,17 +2,18 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include "relcmd.h"
 
-void cmdReflexive(TRelationItem *rel) /// Ondra
+int cmdReflexive(TRelationItem *rel) /// Ondra
 {
-
+    return false;
 }
 
-void cmdSymmetric(TRelationItem *rel) /// Petana
+int cmdSymmetric(TRelationItem *rel) /// Petana
 {
-
+    return false;
 }
 
 /** cmdAntisymmetric tiskne true nebo false, jestli je relace antisymetriska
@@ -20,14 +21,14 @@ void cmdSymmetric(TRelationItem *rel) /// Petana
  * \param rel je ukazatel na seznam prvku relace
  *
  */
-void cmdAntisymmetric(TRelationItem *rel) /// mikki
+int cmdAntisymmetric(TRelationItem *rel) /// mikki
 {
-
+    return false;
 }
 
-void cmdTransitive(TRelationItem *rel)  /// Ondra
+int cmdTransitive(TRelationItem *rel)  /// Ondra
 {
-
+    return false;
 }
 
 /** cmdFunction tiskne true nebo false, jestli je relace rel funkci
@@ -35,7 +36,7 @@ void cmdTransitive(TRelationItem *rel)  /// Ondra
  * \param rel je ukazatel na seznam prvku relace
  *
  */
-void cmdFunction(TRelationItem *rel)
+int cmdFunction(TRelationItem *rel)
 {
     while(rel != NULL)
     {
@@ -45,13 +46,14 @@ void cmdFunction(TRelationItem *rel)
             if(strcmp(rel->name1, tmpRel->name1) == 0)
             {
                 printf("false\n");
-                return;
+                return false;
             }
             tmpRel = tmpRel->next;
         }
         rel = rel->next;
     }
     printf("true\n");
+    return true;
 }
 
 void cmdDomain(TRelationItem *rel, TWordListItem **resSet) /// Petana
@@ -78,9 +80,83 @@ void cmdCodomain(TRelationItem *rel, TWordListItem **resSet)
     printSet(*resSet);
 }
 
-void cmdInjective(TRelationItem *rel)   /// Petana
+TRelationItem *findRelX(TRelationItem *rel, char *x)
 {
+    while(rel != NULL)
+    {
+        if(strcmp(rel->name1, x)==0)
+        {
+            return rel;
+        }
+        rel = rel->next;
+    }
+    return NULL;
+}
 
+TRelationItem *findRelY(TRelationItem *rel, char *y)
+{
+    while(rel != NULL)
+    {
+        if(strcmp(rel->name2, y)==0)
+        {
+            return rel;
+        }
+        rel = rel->next;
+    }
+    return NULL;
+}
+
+int countRelX(TRelationItem *rel, char *x)
+{
+    int cnt = 0;
+    while(rel != NULL)
+    {
+        if(strcmp(rel->name1, x)==0)
+        {
+            cnt++;
+        }
+        rel = rel->next;
+    }
+    return cnt;
+}
+
+int countRelY(TRelationItem *rel, char *y)
+{
+    int cnt = 0;
+    while(rel != NULL)
+    {
+        if(strcmp(rel->name2, y)==0)
+        {
+            cnt++;
+        }
+        rel = rel->next;
+    }
+    return cnt;
+}
+
+int cmdInjective(TRelationItem *rel, TWordListItem *set1, TWordListItem *set2)   /// Petana
+{
+    TRelationItem *tmpRel;
+    while(set2 != NULL)
+    {
+        if(countRelY(rel, set2->name) >= 2)
+        {
+            printf("false\n");
+            return false;
+        }
+        tmpRel = findRelY(rel, set2->name);
+        if(tmpRel != NULL)
+        {
+            if(!strInSet(set1, tmpRel->name1))
+            {
+                printf("false\n");
+                return false;
+            }
+        }
+        set2 = set2->next;
+    }
+    printf("true\n");
+    return true;
 }
 
 /** cmdSurjective tiskne true nebo false, jestli je funkce rel surjektivni
@@ -88,12 +164,80 @@ void cmdInjective(TRelationItem *rel)   /// Petana
  * \param rel je ukazatel na seznam prvku relace
  *
  */
-void cmdSurjective(TRelationItem *rel)  /// mikki
+int cmdSurjective(TRelationItem *rel, TWordListItem *set1, TWordListItem *set2)  /// mikki
 {
-
+    TRelationItem *tmpRel;
+    while(set2 != NULL)
+    {
+        tmpRel = findRelY(rel, set2->name);
+        if(tmpRel == NULL)
+        {
+            printf("false\n");
+            return false;
+        }
+        if(!strInSet(set1, tmpRel->name1))
+        {
+            printf("false\n");
+            return false;
+        }
+        set2 = set2->next;
+    }
+    printf("true\n");
+    return true;
 }
 
-void cmdBijective(TRelationItem *rel) /// Ondra
+int cmdBijective(TRelationItem *rel, TWordListItem *set1, TWordListItem *set2) /// Ondra
 {
-
+    TRelationItem *tmpRel;
+    TWordListItem *tmpSet;
+    tmpSet = set1;
+    while(tmpSet != NULL)
+    {
+        if(countRelX(rel, tmpSet->name) != 1)
+        {
+            printf("false\n");
+            return false;
+        }
+        tmpRel = findRelX(rel, tmpSet->name);
+        if(tmpRel != NULL)
+        {
+            if(!strInSet(set2, tmpRel->name2))
+            {
+                printf("false\n");
+                return false;
+            }
+        }
+        else
+        {   // toto by teoreticky nemelo nastat, protoze jsme si predtim spocitali, ze je prave 1
+            printf("false\n");
+            return false;
+        }
+        tmpSet = tmpSet->next;
+    }
+    tmpSet = set2;
+    while(tmpSet != NULL)
+    {
+        if(countRelY(rel, tmpSet->name) != 1)
+        {
+            printf("false\n");
+            return false;
+        }
+        tmpRel = findRelY(rel, tmpSet->name);
+        if(tmpRel != NULL)
+        {
+            if(!strInSet(set1, tmpRel->name1))
+            {
+                printf("false\n");
+                return false;
+            }
+        }
+        else
+        {   // toto by teoreticky nemelo nastat, protoze jsme si predtim spocitali, ze je prave 1
+            printf("false\n");
+            return false;
+        }
+        tmpSet = tmpSet->next;
+    }
+    printf("true\n");
+    return true;
 }

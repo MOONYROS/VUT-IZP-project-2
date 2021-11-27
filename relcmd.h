@@ -1,12 +1,12 @@
 #include "setcal_common.h"
 
-void cmdReflexive(TRelationItem *rel);
-void cmdSymmetric(TRelationItem *rel);
-void cmdAntisymmetric(TRelationItem *rel);
-void cmdTransitive(TRelationItem *rel);
-void cmdFunction(TRelationItem *rel);
+int cmdReflexive(TRelationItem *rel);
+int cmdSymmetric(TRelationItem *rel);
+int cmdAntisymmetric(TRelationItem *rel);
+int cmdTransitive(TRelationItem *rel);
+int cmdFunction(TRelationItem *rel);
 void cmdDomain(TRelationItem *rel, TWordListItem **resSet);
 void cmdCodomain(TRelationItem *rel, TWordListItem **resSet);
-void cmdInjective(TRelationItem *rel);
-void cmdSurjective(TRelationItem *rel);
-void cmdBijective(TRelationItem *rel);
+int cmdInjective(TRelationItem *rel, TWordListItem *set1, TWordListItem *set2);
+int cmdSurjective(TRelationItem *rel, TWordListItem *set1, TWordListItem *set2);
+int cmdBijective(TRelationItem *rel, TWordListItem *set1, TWordListItem *set2);
