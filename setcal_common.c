@@ -51,7 +51,6 @@ void addSetItem(TWordListItem **pset, char *item)
  * \param set je ukazatel na mnozinu
  *
  */
-
 void printWordList(TWordListItem *set)
 {
     while(set != NULL)
@@ -72,4 +71,21 @@ void printUniversum(TWordListItem *set)
 {
     printf("U");
     printWordList(set);
+}
+
+/** countElements spocita prvky v mnozine set1
+ *
+ * \param set1 je ukazatel na mnozinu
+ * \return vraci pocet prvku v mnozine
+ *
+ */
+int countElements(TWordListItem *set1)
+{
+    int elementCount = 0; /**< elementCount pocita jednotlive prvky v set1 */
+    while(set1 != NULL)
+    {
+        elementCount++;
+        set1 = set1->next;
+    }
+    return elementCount;
 }

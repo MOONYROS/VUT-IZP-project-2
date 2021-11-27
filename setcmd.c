@@ -22,9 +22,14 @@ void cmdEmpty(TWordListItem *set1)
     }
 }
 
-void cmdCard(TWordListItem *set1) /// Ondra
+/** cmdCard tiskne pocet prvku v mnozine set1
+ *
+ * \param set1 je ukazatel na mnozinu
+ *
+ */
+void cmdCard(TWordListItem *set1) /// Ondra - upravil MOONYROS (tu funkci jsem vytvoril, nic jsi neprehlidl :D)
 {
-
+    printf("%d\n", countElements(set1));
 }
 
 void cmdComplement(TWordListItem *set1, TWordListItem **resSet) /// Petana
@@ -34,16 +39,16 @@ void cmdComplement(TWordListItem *set1, TWordListItem **resSet) /// Petana
 }
 
 /** cmdUnion tiske sjednoceni mnozin set1 a set2
- * 
+ *
  * \param set1 je ukazatel na prvni mnozinu
  * \param set2 je ukazatel na druhou mnozinu
  * \param resSet je ukazatel na ukazatel, do ktereho je ulozena vysledna mnozina
- * 
+ *
  */
 void cmdUnion(TWordListItem *set1, TWordListItem *set2, TWordListItem **resSet) /// mikki
 {
     assert(resSet != NULL);
-     
+
 }
 
 /** cmdIntersect tiskne prunik mnozin set1 a set2
@@ -122,27 +127,41 @@ void cmdSubset(TWordListItem *set1, TWordListItem *set2)    /// Petana
 {
 
 }
+
 /** cmdEquals tiskne true nebo false, jestli jsou mnoziny rovny
- * 
+ *
  * \param set1 ukazatel na prvni mnozinu
  * \param set2 ukazatel na druhou mnozinu
- * 
+ *
  */
-void cmdEquals(TWordListItem *set1, TWordListItem *set2)    /// mikki
+void cmdEquals(TWordListItem *set1, TWordListItem *set2)    /// mikki - upravil MOONYROS
 {
-    int isSame=0;
-    while(set1 != NULL){
-        while(set2 != NULL){
-            if(strcmp(set1->name, set2->name)==0){
-                isSame=1;
-            }
-            set2=set2->next;
-        }
-        set1=set1->next;
-    }
-    if(isSame==1){
-            printf("true\n");
-    }else{
+    TWordListItem *tmpSet;
+    int isSame;
+    if(countElements(set1) != countElements(set2))
+    {
         printf("false\n");
+        return;
     }
+    while(set1 != NULL)
+    {
+        isSame = 0;
+        tmpSet = set2;
+        while(tmpSet != NULL)
+        {
+            if(strcmp(set1->name, tmpSet->name) == 0)
+            {
+                isSame = 1;
+                break;
+            }
+            tmpSet = tmpSet->next;
+        }
+        if(isSame == 0)
+        {
+            printf("false\n");
+            return;
+        }
+        set1 = set1->next;
+    }
+    printf("true\n");
 }

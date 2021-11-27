@@ -16,9 +16,9 @@ void cmdSymmetric(TRelationItem *rel) /// Petana
 }
 
 /** cmdAntisymmetric tiskne true nebo false, jestli je relace antisymetriska
- * 
+ *
  * \param rel je ukazatel na seznam prvku relace
- * 
+ *
  */
 void cmdAntisymmetric(TRelationItem *rel) /// mikki
 {
@@ -82,10 +82,11 @@ void cmdInjective(TRelationItem *rel)   /// Petana
 {
 
 }
+
 /** cmdSurjective tiskne true nebo false, jestli je funkce rel surjektivni
- * 
+ *
  * \param rel je ukazatel na seznam prvku relace
- * 
+ *
  */
 void cmdSurjective(TRelationItem *rel)  /// mikki
 {
