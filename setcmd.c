@@ -142,9 +142,51 @@ void cmdMinus(TWordListItem *set1, TWordListItem *set2, TWordListItem **resSet)
     printSet(*resSet);
 }
 
+/**
+ * 
+ * \param set1 je ukazatel na mnozinu 1
+ * \param set2 je ukazatel na mnozinu 2
+ * \param se1ElementNum je pocet prvku v mnozine 1
+ * \param commonElementNum je pocet prvku, ktere ma mnozina 1 spolecne s mnozinou 2
+ * \return true v pripade, ze pocet spolecnych prvku se rovna poctu prvku v mnozine 1
+ * \return false kdykoliv jindy
+ * V cyklech se postupne prochazeji obe dve mnoziny a dle toho se modifikuji vyse uvedene parametry
+ * 
+ */
+
 int cmdSubseteq(TWordListItem *set1, TWordListItem *set2) /// Ondra
 {
-    return false;
+    int set1ElementNum = 0;
+    int commonElementNum = 0;
+
+    TWordListItem *tmpSet = set2;
+
+    while (set1 != NULL)
+    {
+        set1ElementNum++;
+
+        while (tmpSet != NULL)
+        {
+            if (strcmp(set1->name, tmpSet->name) == 0)
+            {
+                commonElementNum++;
+            }
+
+            tmpSet = tmpSet->next;
+        }
+
+        set1 = set1->next;
+        tmpSet = set2;
+    }
+
+    if (commonElementNum == set1ElementNum)
+    {
+        return true;
+    }
+    else 
+    {
+        return false;
+    }
 }
 
 int cmdSubset(TWordListItem *set1, TWordListItem *set2)    /// Petana
