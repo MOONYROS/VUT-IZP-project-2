@@ -16,14 +16,39 @@ int cmdSymmetric(TRelationItem *rel) /// Petana
     return false;
 }
 
-/** cmdAntisymmetric tiskne true nebo false, jestli je relace antisymetriska
+/** cmdAntisymmetric tiskne true nebo false, jestli je relace antisymetricka
  *
  * \param rel je ukazatel na seznam prvku relace
  *
  */
 int cmdAntisymmetric(TRelationItem *rel) /// mikki
 {
-    return false;
+  while(rel != NULL)
+  {
+
+    if(strcmp(rel->name1,rel->name2)==0)
+    {
+      printf("true\n");
+      return true;
+    }
+    TRelationItem *tmpRel = rel->next;
+    while(tmpRel != NULL)
+    {
+        if(strcmp(rel->name1, tmpRel->name2)==0)
+        {
+          if(strcmp(rel->name2, tmpRel->name1)==0)
+          {
+            printf("false\n");
+            return false;
+          }
+        }
+        tmpRel=tmpRel->next;
+    }
+    rel=rel->next;
+  }
+  printf("true\n");
+  return true;
+
 }
 
 int cmdTransitive(TRelationItem *rel)  /// Ondra
