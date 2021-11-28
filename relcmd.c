@@ -8,7 +8,27 @@
 
 int cmdReflexive(TRelationItem *rel) /// Ondra
 {
-    return false;
+    int elementNum = 0;
+    int sameElementRelationNum = 0;
+
+    while (rel != NULL)
+    {
+        elementNum += 2;
+        if (strcmp(rel->name1, rel->name2) == 0)
+        {
+            sameElementRelationNum++;
+        }
+        rel = rel->next;
+    }
+
+    if (elementNum / 2 == sameElementRelationNum)
+    {
+        return true;
+    }
+    else 
+    {
+        return false;
+    }
 }
 
 int cmdSymmetric(TRelationItem *rel) /// Petana

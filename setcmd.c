@@ -28,12 +28,21 @@ int cmdEmpty(TWordListItem *set1)
 
 /** cmdCard tiskne pocet prvku v mnozine set1
  *
- * \param set1 je ukazatel na mnozinu
+ * \param set1 je ukazatel na mnozinu (radek), obsahuje ukazatel na sebe sama, dokud neni NULL, tak se pocitaji prvky
+ * \param elementCount je promenna, do ktere se uklada pocet prvku v mnozine, pricitaji se, dokud set1 neni NULL
  *
  */
-void cmdCard(TWordListItem *set1) /// Ondra - upravil MOONYROS (tu funkci jsem vytvoril, nic jsi neprehlidl :D)
+void cmdCard(TWordListItem *set1)
 {
-    printf("%d\n", countElements(set1));
+    int elementCount = 0;
+
+    while (set1 != NULL)
+    {
+        elementCount++;
+        set1 = set1->next;
+    }
+
+    printf ("%d\n", elementCount);
 }
 
 void cmdComplement(TWordListItem *set1, TWordListItem **resSet) /// Petana
