@@ -34,18 +34,10 @@ int cmdEmpty(TWordListItem *set1)
  */
 void cmdCard(TWordListItem *set1)
 {
-    int elementCount = 0;
-
-    while (set1 != NULL)
-    {
-        elementCount++;
-        set1 = set1->next;
-    }
-
-    printf ("%d\n", elementCount);
+    printf("%d\n", countElements(set1));
 }
 
-void cmdComplement(TWordListItem *set1, TWordListItem **resSet) /// Petana
+void cmdComplement(TWordListItem *set1, TWordListItem *universum, TWordListItem **resSet) /// Petana
 {
     assert(resSet != NULL);
 

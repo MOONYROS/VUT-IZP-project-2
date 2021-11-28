@@ -758,7 +758,7 @@ int processCommands(TLine *line, int lineNr)
             }
             if(strcmp(command, "complement") == 0)
             {
-                cmdComplement(line[operand1-1].set, &line[ln].set);
+                cmdComplement(line[operand1-1].set, line[0].set, &line[ln].set);
                 continue;
             }
             if(strcmp(command, "union") == 0)

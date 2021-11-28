@@ -43,32 +43,30 @@ int cmdSymmetric(TRelationItem *rel) /// Petana
  */
 int cmdAntisymmetric(TRelationItem *rel) /// mikki
 {
-  while(rel != NULL)
-  {
-
-    if(strcmp(rel->name1,rel->name2)==0)
+    while(rel != NULL)
     {
-      printf("true\n");
-      return true;
-    }
-    TRelationItem *tmpRel = rel->next;
-    while(tmpRel != NULL)
-    {
-        if(strcmp(rel->name1, tmpRel->name2)==0)
+        if(strcmp(rel->name1,rel->name2)==0)
         {
-          if(strcmp(rel->name2, tmpRel->name1)==0)
-          {
-            printf("false\n");
-            return false;
-          }
+            printf("true\n");
+            return true;
         }
-        tmpRel=tmpRel->next;
+        TRelationItem *tmpRel = rel->next;
+        while(tmpRel != NULL)
+        {
+            if(strcmp(rel->name1, tmpRel->name2)==0)
+            {
+                if(strcmp(rel->name2, tmpRel->name1)==0)
+                {
+                    printf("false\n");
+                    return false;
+                }
+            }
+            tmpRel=tmpRel->next;
+        }
+        rel=rel->next;
     }
-    rel=rel->next;
-  }
-  printf("true\n");
-  return true;
-
+    printf("true\n");
+    return true;
 }
 
 int cmdTransitive(TRelationItem *rel)  /// Ondra

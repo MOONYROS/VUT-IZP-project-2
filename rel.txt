@@ -1,11 +1,10 @@
 U dad mom girl boy man woman A B C D E F X Y Z ZZ
 R (dad boy) (dad girl) (mom boy) (mom girl)
 R (dad man) (boy man) (mom woman) (girl woman)
+R (A B) (B D) (C D) (D E)
 S A B C
 S X Y Z
 R (A X) (B Y) (C ZZ)
+C antisymmetric 4
 C codomain 2
 C function 3
-C surjective 6 4 5
-C injective 6 4 5
-C bijective 6 4 5
