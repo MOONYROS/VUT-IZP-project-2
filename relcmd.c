@@ -11,12 +11,91 @@
  * \param rel je ukazatel na jednotlive relace
  * \param elementNum pocita, kolik je celkove prvku na radku
  * \param sameElementRelationNum pocita, kolik prvku je v relaci samo se sebou
+ * \param uniqueElementNum pocita, kolik je unikatnich prvku v relacich
+ * \param elements je pole stringu, ukladaji se do nej stringy na radku
+ * pote se porovnavaji stringy a postupne se zvysuje \param uniqueElementNum
+ * nasleduje porovnavani stringu v relacich, postupne se zvysuje \param sameElementRelationNum
+ * a pokud se \param uniqueElementNum a \param sameElementRelationNum rovnaji, pak je relace reflexivni
  * 
  */
 
-int cmdReflexive(TRelationItem *rel) /// Ondra
+int cmdReflexive(TRelationItem *rel) 
 {
+    int uniqueElementsNum = 0;
+    int sameElementRelation = 0;
+    int elementsNum = 0;
+
+    TRelationItem *tmpRel = rel;
+    TRelationItem *tmpRel1 = rel;
+
+    for (;tmpRel != NULL; tmpRel = tmpRel->next)
+    {
+        elementsNum += 2;
+    }
+
+    char *elements[elementsNum];
+
     
+    for (int i = 0; tmpRel1 != NULL; i += 2)
+    { 
+        
+        int stringLenght1 = strlen(tmpRel1->name1);
+        int stringLenght2 = strlen(tmpRel1->name2);
+
+        elements[i] = malloc(stringLenght1 * sizeof(char) + 1);
+        elements[i + 1] = malloc(stringLenght2 * sizeof(char) + 1);
+
+        if (!(elements[i] && elements[i + 1]))
+        {
+            return -1;
+        }
+
+        elements[i] = tmpRel1->name1;
+        elements[i + 1] = tmpRel1->name2;
+        tmpRel1 = tmpRel1->next;  
+    }
+
+    for (int i = 0; i < elementsNum; i++)
+    {     
+        int j;
+        for (j = i + 1; j < elementsNum; j++)
+        {
+            if (strcmp(elements[i], elements[j]) == 0)
+            {
+                break;
+            }
+        }
+        if (j == elementsNum)
+        {
+            uniqueElementsNum++;
+        }
+    }
+
+    for (int i = 0; i < elementsNum; i++)
+    {
+        free(elements[i]);
+    }
+
+    while (rel != NULL)
+    {
+        if (strcmp(rel->name1, rel->name2) == 0)
+        {
+            sameElementRelation++;
+        }
+        rel = rel->next;
+    }
+
+    if (uniqueElementsNum == sameElementRelation)
+    {
+        printf ("true\n");
+        return true;
+    }
+    else 
+    {
+        printf ("false\n");
+        return false;
+    }
+
 }
 
 int cmdSymmetric(TRelationItem *rel) /// Petana
