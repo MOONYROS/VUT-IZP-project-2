@@ -31,9 +31,33 @@ int cmdReflexive(TRelationItem *rel) /// Ondra
     }
 }
 
+
+/** cmdSymmetric tiskne true pokud je relace symetricka, false pokud neni
+ *
+ * \param rel je ukazatel na danou relaci
+ * \return true nebo false
+ *
+ */
 int cmdSymmetric(TRelationItem *rel) /// Petana
 {
-    return false;
+    while(rel != NULL){
+    if(strcmp(rel->name1, rel->name2)!=0){
+      TRelationItem *secRel = rel->next;
+
+      while(secRel != NULL){
+        if((strcmp(rel->name1, secRel->name2)==0) && (strcmp(rel->name2, secRel->name1)==0)){
+          printf("True\n");
+          return true;
+        }else{
+          printf("False\n");
+          return false;
+        }
+        secRel = secRel->next;
+      }
+      rel= rel->next;
+    }
+  }
+    
 }
 
 /** cmdAntisymmetric tiskne true nebo false, jestli je relace antisymetricka
@@ -99,10 +123,21 @@ int cmdFunction(TRelationItem *rel)
     return true;
 }
 
+/** cmdDomain tiskne definicni obor relace
+ *
+ * \param rel je ukazatel na danou relaci
+ * \param resSet je ukazatel na ukazatel na vysledny definicni obor
+ *
+ */
 void cmdDomain(TRelationItem *rel, TWordListItem **resSet) /// Petana
 {
     assert(resSet != NULL);
 
+    while(rel != NULL){
+      addSetItem(resSet, rel->name1);
+      rel = rel->next;
+    }
+    printSet(*resSet);
 }
 
 /** cmdCodomain tiskne obor hodnot funkce rel
