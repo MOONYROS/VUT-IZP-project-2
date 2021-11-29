@@ -213,7 +213,14 @@ int cmdSubseteq(TWordListItem *set1, TWordListItem *set2) /// Ondra
  */
 int cmdSubset(TWordListItem *set1, TWordListItem *set2)    /// Petana
 {
-    return false;
+    if(!(cmdEquals(set1, set2))&&(cmdSubseteq(set1, set2))){
+      printf("True\n");
+      return true;
+    }
+    else{
+      printf("False\n");
+      return false;
+    }
 }
 
 /** cmdEquals tiskne a vraci true nebo false, jestli jsou mnoziny rovny
