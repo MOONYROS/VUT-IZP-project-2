@@ -8,3 +8,5 @@ S
 S
 R
 C union 2 3
+C complement 2
+C subset 3 7
