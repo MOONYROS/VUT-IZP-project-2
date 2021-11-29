@@ -37,10 +37,33 @@ void cmdCard(TWordListItem *set1)
     printf("%d\n", countElements(set1));
 }
 
+/** cmdComplement tiskne mnozinovy doplnek k zadane mnozine
+ *
+ * \param set1 je ukazatel na danou mnozinu
+ * \param universum je ukazatelm na mnozinu vsech prvku
+ * \param *resSet je ukazatel na ukazatel na vyslednou mnozinu
+ *
+ */
 void cmdComplement(TWordListItem *set1, TWordListItem *universum, TWordListItem **resSet) /// Petana
 {
     assert(resSet != NULL);
+    TWordListItem *setTmp = set1;
 
+    while(universum != NULL)
+    {
+        int check = 0;
+        while(setTmp != NULL)
+        {
+            if(strcmp(universum->name, setTmp->name) == 0) check = 1;
+            setTmp = setTmp->next;
+        }
+
+        if(!check && resSet) addSetItem(resSet, universum->name);
+
+        universum = universum->next;
+        setTmp = set1;
+    }
+    printSet(*resSet);
 }
 
 /** cmdUnion tiske sjednoceni mnozin set1 a set2
@@ -181,9 +204,23 @@ int cmdSubseteq(TWordListItem *set1, TWordListItem *set2) /// Ondra
     }
 }
 
+/** cmdSubset kontroluje, zda je množina valstní (true) podmnozinou nebo ne (false)
+ *
+ * \param set1 je ukazatel na prvni mnozinu (pripadnou podmnozinu)
+ * \param set2 je ukazatel na druhou mnozinu
+ * \return true pokud je set1 vlastni podmnozinou, false pokud neni
+ *
+ */
 int cmdSubset(TWordListItem *set1, TWordListItem *set2)    /// Petana
 {
-    return false;
+    if(!(cmdEquals(set1, set2))&&(cmdSubseteq(set1, set2))){
+      printf("True\n");
+      return true;
+    }
+    else{
+      printf("False\n");
+      return false;
+    }
 }
 
 /** cmdEquals tiskne a vraci true nebo false, jestli jsou mnoziny rovny
