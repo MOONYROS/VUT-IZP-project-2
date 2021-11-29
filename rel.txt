@@ -8,3 +8,5 @@ R (A X) (B Y) (C ZZ)
 C antisymmetric 4
 C codomain 2
 C function 3
+C domain 7
+C symmetric 8
