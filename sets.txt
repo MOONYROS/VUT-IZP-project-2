@@ -1,12 +1,14 @@
 U a b c x y z
 S a b c x
-S x y z
+S x y z a
 S x y z
 S z x y
 S a x y z
 S
 S
 R
-C union 2 3
-C complement 2
-C subset 3 7
+C subseteq 4 3
+C subset 4 3
+C subset 4 5
+C minus 2 3
+C equals 4 6

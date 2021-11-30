@@ -1,5 +1,6 @@
 #include "setcal_common.h"
 
+TRelationItem *findRelXY(TRelationItem *rel, char *x, char *y);
 int cmdReflexive(TRelationItem *rel);
 int cmdSymmetric(TRelationItem *rel);
 int cmdAntisymmetric(TRelationItem *rel);

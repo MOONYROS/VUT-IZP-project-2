@@ -47,21 +47,14 @@ void cmdCard(TWordListItem *set1)
 void cmdComplement(TWordListItem *set1, TWordListItem *universum, TWordListItem **resSet) /// Petana
 {
     assert(resSet != NULL);
-    TWordListItem *setTmp = set1;
 
     while(universum != NULL)
     {
-        int check = 0;
-        while(setTmp != NULL)
+        if(!strInSet(set1, universum->name))
         {
-            if(strcmp(universum->name, setTmp->name) == 0) check = 1;
-            setTmp = setTmp->next;
+            addSetItem(resSet, universum->name);
         }
-
-        if(!check && resSet) addSetItem(resSet, universum->name);
-
         universum = universum->next;
-        setTmp = set1;
     }
     printSet(*resSet);
 }
@@ -101,22 +94,13 @@ void cmdIntersect(TWordListItem *set1, TWordListItem *set2, TWordListItem **resS
 {
     assert(resSet != NULL);
 
-    TWordListItem *setTmp = set2;
     while(set1 != NULL)
     {
-        while(setTmp != NULL)
+        if(strInSet(set2, set1->name))
         {
-            if(strcmp(set1->name, setTmp->name) == 0)
-            {
-                if(resSet != NULL)
-                {
-                    addSetItem(resSet, set1->name);
-                }
-            }
-            setTmp = setTmp->next;
+            addSetItem(resSet, set1->name);
         }
         set1 = set1->next;
-        setTmp = set2;
     }
     printSet(*resSet);
 }
@@ -132,74 +116,78 @@ void cmdMinus(TWordListItem *set1, TWordListItem *set2, TWordListItem **resSet)
 {
     assert(resSet != NULL);
 
-    TWordListItem *setTmp = set2;
     while(set1 != NULL)
     {
-        int isThere = 0;
-        while(setTmp != NULL)
+        if(strInSet(set2, set1->name) == 0)
         {
-            if(strcmp(set1->name, setTmp->name) == 0)
-            {
-                isThere = 1;
-            }
-            setTmp = setTmp->next;
-        }
-        if(isThere == 0)
-        {
-            if(resSet != NULL)
-            {
-                addSetItem(resSet, set1->name);
-            }
+            addSetItem(resSet, set1->name);
         }
         set1 = set1->next;
-        setTmp = set2;
     }
     printSet(*resSet);
 }
 
-/**
- * 
+/** cmdSubseteqNoPrint vraci true nebo false podle toho, jestli je mnozina set1 podmnozinou mnoziny set2
+ *
  * \param set1 je ukazatel na mnozinu 1
  * \param set2 je ukazatel na mnozinu 2
- * \param se1ElementNum je pocet prvku v mnozine 1
- * \param commonElementNum je pocet prvku, ktere ma mnozina 1 spolecne s mnozinou 2
- * \return true v pripade, ze pocet spolecnych prvku se rovna poctu prvku v mnozine 1
- * \return false kdykoliv jindy
- * V cyklech se postupne prochazeji obe dve mnoziny a dle toho se modifikuji vyse uvedene parametry
- * 
+ * \return vraci true (1), pokud je mnozina set1 podmnozinou mnoziny set1, jinak false (0)
+ *
  */
-
-int cmdSubseteq(TWordListItem *set1, TWordListItem *set2) /// Ondra
+int cmdSubseteqNoPrint(TWordListItem *set1, TWordListItem *set2) /// Ondra
 {
-    int set1ElementNum = 0;
-    int commonElementNum = 0;
-
-    TWordListItem *tmpSet = set2;
-
     while (set1 != NULL)
     {
-        set1ElementNum++;
-
-        while (tmpSet != NULL)
+        if(strInSet(set2, set1->name) == 0)
         {
-            if (strcmp(set1->name, tmpSet->name) == 0)
-            {
-                commonElementNum++;
-            }
-
-            tmpSet = tmpSet->next;
+            return false;
         }
-
         set1 = set1->next;
-        tmpSet = set2;
     }
+    return true;
+}
 
-    if (commonElementNum == set1ElementNum)
+/** cmdEqualsNoPrint vraci true nebo false, jestli jsou mnoziny rovny
+ *
+ * \param set1 ukazatel na prvni mnozinu
+ * \param set2 ukazatel na druhou mnozinu
+ * \return vraci true (1), pokud jsou si mnoziny rovny, jinak false (0)
+ *
+ */
+int cmdEqualsNoPrint(TWordListItem *set1, TWordListItem *set2)
+{
+    if(countElements(set1) != countElements(set2))
     {
+        return false;
+    }
+    while(set1 != NULL)
+    {
+        if(strInSet(set2, set1->name) == 0)
+        {
+            return false;
+        }
+        set1 = set1->next;
+    }
+    return true;
+}
+
+/** cmdSubseteq vraci a tiskne true nebo false podle toho, jestli je mnozina set1 podmnozinou mnoziny set2
+ *
+ * \param set1 je ukazatel na mnozinu 1
+ * \param set2 je ukazatel na mnozinu 2
+ * \return vraci true (1), pokud je mnozina set1 podmnozinou mnoziny set1, jinak false (0)
+ *
+ */
+int cmdSubseteq(TWordListItem *set1, TWordListItem *set2) /// Ondra
+{
+    if(cmdSubseteqNoPrint(set1, set2))
+    {
+        printf("true\n");
         return true;
     }
-    else 
+    else
     {
+        printf("false\n");
         return false;
     }
 }
@@ -213,13 +201,15 @@ int cmdSubseteq(TWordListItem *set1, TWordListItem *set2) /// Ondra
  */
 int cmdSubset(TWordListItem *set1, TWordListItem *set2)    /// Petana
 {
-    if(!(cmdEquals(set1, set2))&&(cmdSubseteq(set1, set2))){
-      printf("True\n");
-      return true;
+    if(!(cmdEqualsNoPrint(set1, set2))&&(cmdSubseteqNoPrint(set1, set2)))
+    {
+        printf("true\n");
+        return true;
     }
-    else{
-      printf("False\n");
-      return false;
+    else
+    {
+        printf("false\n");
+        return false;
     }
 }
 
@@ -232,33 +222,14 @@ int cmdSubset(TWordListItem *set1, TWordListItem *set2)    /// Petana
  */
 int cmdEquals(TWordListItem *set1, TWordListItem *set2)    /// mikki - upravil MOONYROS
 {
-    TWordListItem *tmpSet;
-    int isSame;
-    if(countElements(set1) != countElements(set2))
+    if(cmdEqualsNoPrint(set1, set2))
+    {
+        printf("true\n");
+        return true;
+    }
+    else
     {
         printf("false\n");
         return false;
     }
-    while(set1 != NULL)
-    {
-        isSame = 0;
-        tmpSet = set2;
-        while(tmpSet != NULL)
-        {
-            if(strcmp(set1->name, tmpSet->name) == 0)
-            {
-                isSame = 1;
-                break;
-            }
-            tmpSet = tmpSet->next;
-        }
-        if(isSame == 0)
-        {
-            printf("false\n");
-            return false;
-        }
-        set1 = set1->next;
-    }
-    printf("true\n");
-    return true;
 }

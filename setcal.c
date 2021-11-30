@@ -73,6 +73,11 @@ void addRelationItem(TRelationItem **prel, char *name1, char *name2)
 {
     assert(prel != NULL);
 
+    if(findRelXY(*prel, name1, name2) != NULL) /**< test, jestli dvojice uz je v relaci obsazena */
+    {
+        return;
+    }
+
     TRelationItem *next = *prel;
     *prel = malloc(sizeof(TRelationItem));
     if(*prel == NULL)
