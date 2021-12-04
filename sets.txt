@@ -1,14 +1,5 @@
-U a b c x y z
-S a b c x
-S x y z a
-S x y z
-S z x y
-S a x y z
-S
-S
-R
-C subseteq 4 3
-C subset 4 3
-C subset 4 5
-C minus 2 3
-C equals 4 6
+U a b c d e f
+S a b c
+R (a b)
+C empty 5
+C card 1

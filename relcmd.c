@@ -6,96 +6,30 @@
 
 #include "relcmd.h"
 
-TRelationItem *findRelX(TRelationItem *rel, char *x)
-{
-    while(rel != NULL)
-    {
-        if(strcmp(rel->name1, x)==0)
-        {
-            return rel;
-        }
-        rel = rel->next;
-    }
-    return NULL;
-}
 
-TRelationItem *findRelY(TRelationItem *rel, char *y)
-{
-    while(rel != NULL)
-    {
-        if(strcmp(rel->name2, y)==0)
-        {
-            return rel;
-        }
-        rel = rel->next;
-    }
-    return NULL;
-}
-
-TRelationItem *findRelXY(TRelationItem *rel, char *x, char *y)
-{
-    while(rel != NULL)
-    {
-        if((strcmp(rel->name1, x)==0) && (strcmp(rel->name2, y)==0))
-        {
-            return rel;
-        }
-        rel = rel->next;
-    }
-    return NULL;
-}
-
-int countRelX(TRelationItem *rel, char *x)
-{
-    int cnt = 0;
-    while(rel != NULL)
-    {
-        if(strcmp(rel->name1, x)==0)
-        {
-            cnt++;
-        }
-        rel = rel->next;
-    }
-    return cnt;
-}
-
-int countRelY(TRelationItem *rel, char *y)
-{
-    int cnt = 0;
-    while(rel != NULL)
-    {
-        if(strcmp(rel->name2, y)==0)
-        {
-            cnt++;
-        }
-        rel = rel->next;
-    }
-    return cnt;
-}
-
-/** cmdReflexive tiskne a vraci true nebo false podle toho, jestli je relace reflexivni
+/** \brief cmdReflexive tiskne a vraci true nebo false podle toho, jestli je relace reflexivni
  *
  * \param rel je ukazatel na seznam prvku relace
  * \return vraci true (1), pokud je relace reflexivni, jinak false (0)
  *
  */
-int cmdReflexive(TRelationItem *rel)
+int cmdReflexive(TRelationItem *rel, TWordListItem *universum)
 {
-    while(rel != NULL)
+    while(universum != NULL)
     {
-        if (strcmp(rel->name1, rel->name2) != 0)
+        if (findRelXY(rel, universum->name, universum->name) == NULL)
         {
             printf ("false\n");
             return false;
         }
-        rel = rel->next;
+        universum = universum->next;
     }
     printf ("true\n");
     return true;
 }
 
 
-/** cmdSymmetric tiskne a vraci true pokud je relace symetricka, false pokud neni
+/** \brief cmdSymmetric tiskne a vraci true pokud je relace symetricka, false pokud neni
  *
  * \param rel je ukazatel na danou relaci
  * \return vraci true (1), pokud je relace symetricka, jinak false (0)
@@ -129,7 +63,7 @@ int cmdSymmetric(TRelationItem *rel) /// Petana
     return true;
 }
 
-/** cmdAntisymmetric tiskne true nebo false, jestli je relace antisymetricka
+/** \brief cmdAntisymmetric tiskne true nebo false, jestli je relace antisymetricka
  *
  * \param rel je ukazatel na seznam prvku relace
  * \return vraci true (1), pokud je relace antisymetricka, jinak false (0)
@@ -159,7 +93,7 @@ int cmdAntisymmetric(TRelationItem *rel) /// mikki
     return true;
 }
 
-/** cmdTransitive tiskne a vraci true nebo false, jestli je relace rel tranzitivni
+/** \brief cmdTransitive tiskne a vraci true nebo false, jestli je relace rel tranzitivni
  *
  * \param rel je ukazatel na seznam prvku relace
  * \return vraci true (1), pokud je relace tranzitivni, jinak false (0)
@@ -190,7 +124,7 @@ int cmdTransitive(TRelationItem *rel)
     return true;
 }
 
-/** cmdFunction tiskne a vraci true nebo false, jestli je relace rel funkci
+/** \brief cmdFunction tiskne a vraci true nebo false, jestli je relace rel funkci
  *
  * \param rel je ukazatel na seznam prvku relace
  * \return vraci true (1), pokud je relace funkci, jinak false (0)
@@ -216,7 +150,7 @@ int cmdFunction(TRelationItem *rel)
     return true;
 }
 
-/** cmdDomain tiskne definicni obor relace
+/** \brief cmdDomain tiskne definicni obor relace
  *
  * \param rel je ukazatel na danou relaci
  * \param resSet je ukazatel na ukazatel na vysledny definicni obor
@@ -234,7 +168,7 @@ void cmdDomain(TRelationItem *rel, TWordListItem **resSet) /// Petana
     printSet(*resSet);
 }
 
-/** cmdCodomain tiskne obor hodnot funkce rel
+/** \brief cmdCodomain tiskne obor hodnot funkce rel
  *
  * \param rel je ukazatel na seznam prvku relace
  * \param resSet je ukazatel na ukazatel, do ktereho je ulozena vysledna mnozina
@@ -252,7 +186,7 @@ void cmdCodomain(TRelationItem *rel, TWordListItem **resSet)
     printSet(*resSet);
 }
 
-/** cmdInjective tiskne a vraci true nebo false, jestli je relace rel injektivni
+/** \brief cmdInjective tiskne a vraci true nebo false, jestli je relace rel injektivni
  *
  * \param rel je ukazatel na seznam prvku relace
  * \param set1 je ukazatel na mnozinu A
@@ -285,7 +219,7 @@ int cmdInjective(TRelationItem *rel, TWordListItem *set1, TWordListItem *set2)  
     return true;
 }
 
-/** cmdSurjective tiskne a vraci true nebo false, jestli je relace rel surjektivni
+/** \brief cmdSurjective tiskne a vraci true nebo false, jestli je relace rel surjektivni
  *
  * \param rel je ukazatel na seznam prvku relace
  * \param set1 je ukazatel na mnozinu A
@@ -315,7 +249,7 @@ int cmdSurjective(TRelationItem *rel, TWordListItem *set1, TWordListItem *set2) 
     return true;
 }
 
-/** cmdBijective tiskne a vraci true nebo false, jestli je relace rel bijektivni
+/** \brief cmdBijective tiskne a vraci true nebo false, jestli je relace rel bijektivni
  *
  * \param rel je ukazatel na seznam prvku relace
  * \param set1 je ukazatel na mnozinu A
@@ -377,4 +311,91 @@ int cmdBijective(TRelationItem *rel, TWordListItem *set1, TWordListItem *set2) /
     }
     printf("true\n");
     return true;
+}
+
+/** \brief cmdClosureRef tiskne reflexivni uzaver relace
+ *
+ * \param rel je ukazatel na seznam prvku relace
+ * \param universum je ukazatel na mnozinu univerza
+ * \param resRel je ukazatel na ukazatel na vyslednou relaci
+ *
+ */
+void cmdClosureRef(TRelationItem *rel, TWordListItem *universum, TRelationItem **resRel)
+{
+    assert(resRel != NULL);
+
+    while(rel != NULL)
+    {
+        addRelationItem(resRel, rel->name1, rel->name2);
+        rel = rel->next;
+    }
+    while(universum != NULL)
+    {
+        addRelationItem(resRel, universum->name, universum->name);
+        universum = universum->next;
+    }
+    printRelation(*resRel);
+}
+
+/** \brief cmdClosureSym tiskne symetricky uzaver relace
+ *
+ * \param rel je ukazatel na seznam prvku relace
+ * \param resRel je ukazatel na ukazatel na vyslednou relaci
+ *
+ */
+void cmdClosureSym(TRelationItem *rel, TRelationItem **resRel)
+{
+    assert(resRel != NULL);
+
+    while(rel != NULL)
+    {
+        addRelationItem(resRel, rel->name1, rel->name2);
+        addRelationItem(resRel, rel->name2, rel->name1);
+        rel = rel->next;
+    }
+    printRelation(*resRel);
+}
+
+/** \brief cmdClosureTrans tiskne tranzitivni uzaver relace
+ *
+ * \param rel je ukazatel na seznam prvku relace
+ * \param resRel je ukazatel na ukazatel na vyslednou relaci
+ *
+ */
+void cmdClosureTrans(TRelationItem *rel, TRelationItem **resRel)
+{
+    assert(resRel != NULL);
+
+    while(rel != NULL)
+    {
+        addRelationItem(resRel, rel->name1, rel->name2);
+        rel = rel->next;
+    }
+    TRelationItem *firstRel;
+    TRelationItem *secondRel;
+    bool itemAdded = true;
+
+    while(itemAdded)
+    {
+        itemAdded = false;
+        firstRel = *resRel;
+        while(firstRel != NULL)
+        {
+            secondRel = *resRel;
+            while(secondRel != NULL)
+            {
+                if(firstRel != secondRel && strcmp(firstRel->name2, secondRel->name1) == 0)
+                {
+                    if(findRelXY(*resRel, firstRel->name1, secondRel->name2) == NULL)
+                    {
+                        addRelationItem(resRel, firstRel->name1, secondRel->name2);
+                        itemAdded = true;
+                    }
+                }
+                secondRel = secondRel->next;
+            }
+            firstRel = firstRel->next;
+        }
+    }
+    printRelation(*resRel);
 }

@@ -6,7 +6,7 @@
 
 #include "setcmd.h"
 
-/** cmdEmpty tiskne a vraci true nebo false podle toho, jestli je mnozina definovana na radku A prazdna nebo neprazdna
+/** \brief cmdEmpty tiskne a vraci true nebo false podle toho, jestli je mnozina definovana na radku A prazdna nebo neprazdna
  *
  * \param set1 je ukazatel na mnozinu
  * \return vraci true (1), pokud je mnozina prazdna, jinak false (0)
@@ -26,10 +26,9 @@ int cmdEmpty(TWordListItem *set1)
     }
 }
 
-/** cmdCard tiskne pocet prvku v mnozine set1
+/** \brief cmdCard tiskne pocet prvku v mnozine set1
  *
  * \param set1 je ukazatel na mnozinu (radek), obsahuje ukazatel na sebe sama, dokud neni NULL, tak se pocitaji prvky
- * \param elementCount je promenna, do ktere se uklada pocet prvku v mnozine, pricitaji se, dokud set1 neni NULL
  *
  */
 void cmdCard(TWordListItem *set1)
@@ -37,7 +36,7 @@ void cmdCard(TWordListItem *set1)
     printf("%d\n", countElements(set1));
 }
 
-/** cmdComplement tiskne mnozinovy doplnek k zadane mnozine
+/** \brief cmdComplement tiskne mnozinovy doplnek k zadane mnozine
  *
  * \param set1 je ukazatel na danou mnozinu
  * \param universum je ukazatelm na mnozinu vsech prvku
@@ -59,7 +58,7 @@ void cmdComplement(TWordListItem *set1, TWordListItem *universum, TWordListItem 
     printSet(*resSet);
 }
 
-/** cmdUnion tiske sjednoceni mnozin set1 a set2
+/** \brief cmdUnion tiske sjednoceni mnozin set1 a set2
  *
  * \param set1 je ukazatel na prvni mnozinu
  * \param set2 je ukazatel na druhou mnozinu
@@ -83,7 +82,7 @@ void cmdUnion(TWordListItem *set1, TWordListItem *set2, TWordListItem **resSet) 
     printSet(*resSet);
 }
 
-/** cmdIntersect tiskne prunik mnozin set1 a set2
+/** \brief cmdIntersect tiskne prunik mnozin set1 a set2
  *
  * \param set1 je ukazatel na prvni mnozinu
  * \param set2 je ukazatel na druhou mnozinu
@@ -105,7 +104,7 @@ void cmdIntersect(TWordListItem *set1, TWordListItem *set2, TWordListItem **resS
     printSet(*resSet);
 }
 
-/** cmdMinus tiskne rozdil mnozin set1 a set2
+/** \brief cmdMinus tiskne rozdil mnozin set1 a set2
  *
  * \param set1 je ukazatel na prvni mnozinu
  * \param set2 je ukazatel na druhou mnozinu
@@ -127,7 +126,7 @@ void cmdMinus(TWordListItem *set1, TWordListItem *set2, TWordListItem **resSet)
     printSet(*resSet);
 }
 
-/** cmdSubseteqNoPrint vraci true nebo false podle toho, jestli je mnozina set1 podmnozinou mnoziny set2
+/** \brief cmdSubseteqNoPrint vraci true nebo false podle toho, jestli je mnozina set1 podmnozinou mnoziny set2
  *
  * \param set1 je ukazatel na mnozinu 1
  * \param set2 je ukazatel na mnozinu 2
@@ -147,7 +146,7 @@ int cmdSubseteqNoPrint(TWordListItem *set1, TWordListItem *set2) /// Ondra
     return true;
 }
 
-/** cmdEqualsNoPrint vraci true nebo false, jestli jsou mnoziny rovny
+/** \brief cmdEqualsNoPrint vraci true nebo false, jestli jsou mnoziny rovny
  *
  * \param set1 ukazatel na prvni mnozinu
  * \param set2 ukazatel na druhou mnozinu
@@ -171,7 +170,7 @@ int cmdEqualsNoPrint(TWordListItem *set1, TWordListItem *set2)
     return true;
 }
 
-/** cmdSubseteq vraci a tiskne true nebo false podle toho, jestli je mnozina set1 podmnozinou mnoziny set2
+/** \brief cmdSubseteq vraci a tiskne true nebo false podle toho, jestli je mnozina set1 podmnozinou mnoziny set2
  *
  * \param set1 je ukazatel na mnozinu 1
  * \param set2 je ukazatel na mnozinu 2
@@ -192,7 +191,7 @@ int cmdSubseteq(TWordListItem *set1, TWordListItem *set2) /// Ondra
     }
 }
 
-/** cmdSubset kontroluje, zda je množina valstní (true) podmnozinou nebo ne (false)
+/** \brief cmdSubset kontroluje, zda je množina valstní (true) podmnozinou nebo ne (false)
  *
  * \param set1 je ukazatel na prvni mnozinu (pripadnou podmnozinu)
  * \param set2 je ukazatel na druhou mnozinu
@@ -213,7 +212,7 @@ int cmdSubset(TWordListItem *set1, TWordListItem *set2)    /// Petana
     }
 }
 
-/** cmdEquals tiskne a vraci true nebo false, jestli jsou mnoziny rovny
+/** \brief cmdEquals tiskne a vraci true nebo false, jestli jsou mnoziny rovny
  *
  * \param set1 ukazatel na prvni mnozinu
  * \param set2 ukazatel na druhou mnozinu
@@ -230,6 +229,33 @@ int cmdEquals(TWordListItem *set1, TWordListItem *set2)    /// mikki - upravil M
     else
     {
         printf("false\n");
+        return false;
+    }
+}
+
+/** \brief cmdSelect tiskne nahodny prvek z mnoziny set1 a vraci false, pokud je set1 prazdna
+ *
+ * \param set1 je ukazatel na mnozinu
+ * \return vraci false (0), pokud je mnozina prazdna, jinak true (1)
+ *
+ */
+int cmdSelect(TWordListItem *set1)
+{
+    if(set1 != NULL)
+    {
+        int items = countElements(set1);
+        int nrSeek = rand() % items;
+        // printf("mame %d prvku a posuneme se %d krat\n", items, nrSeek);
+        while(nrSeek > 0)
+        {
+            set1 = set1->next;
+            nrSeek--;
+        }
+        printf("%s\n", set1->name);
+        return true;
+    }
+    else
+    {
         return false;
     }
 }

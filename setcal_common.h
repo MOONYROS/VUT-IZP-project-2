@@ -7,6 +7,8 @@
 #define LINES_ALLOC_SIZE 3
 #define UNIVERSUM_LINE 1
 
+#define ERR_MALLOC 6
+
 typedef struct _TWordListItem
 {
     char *name;
@@ -28,6 +30,7 @@ typedef struct _TCommand
 
 typedef struct _TLine
 {
+    char content;
     TWordListItem *set;
     TRelationItem *relation;
     TCommand *command;
@@ -39,5 +42,12 @@ void printWordList(TWordListItem *set);
 void printSet(TWordListItem *set);
 void printUniversum(TWordListItem *set);
 int countElements(TWordListItem *set1);
+void addRelationItem(TRelationItem **prel, char *name1, char *name2);
+void printRelation(TRelationItem *rel);
+TRelationItem *findRelX(TRelationItem *rel, char *x);
+TRelationItem *findRelY(TRelationItem *rel, char *y);
+TRelationItem *findRelXY(TRelationItem *rel, char *x, char *y);
+int countRelX(TRelationItem *rel, char *x);
+int countRelY(TRelationItem *rel, char *y);
 
 #endif // setcal_types_h

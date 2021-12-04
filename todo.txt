@@ -1,0 +1,4 @@
+Nevypisujeme cisla radku skoku v printall.
+
+Prikaz pracuje s cislem radku, na kterem se prikaz nachazi (p-1-1).
+- toto je osetreno, ze to rekne, ze na radku neni mnozina nebo relace

@@ -9,3 +9,4 @@ void cmdMinus(TWordListItem *set1, TWordListItem *set2, TWordListItem **resSet);
 int cmdSubseteq(TWordListItem *set1, TWordListItem *set2);
 int cmdSubset(TWordListItem *set1, TWordListItem *set2);
 int cmdEquals(TWordListItem *set1, TWordListItem *set2);
+int cmdSelect(TWordListItem *set1);

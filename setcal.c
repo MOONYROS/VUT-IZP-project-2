@@ -27,6 +27,7 @@
 #include <string.h>
 #include <errno.h>
 #include <stdbool.h>
+#include <time.h>
 
 #include "setcal_common.h"
 #include "setcmd.h"
@@ -41,84 +42,44 @@
 #define ERR_MALLOC 6
 //#define ERR_PROCESS_LINE 7
 #define ERR_EMPTY_LINE 8
-#define ERR_UKNOWN_COMMAND 9
+#define ERR_WRONG_COMMAND 9
+#define ERR_WRONG_LINE_TYPE 10
 
-#define PL_ERR_OK 0
-#define PL_ERR_INVALID_CMD 1
-#define PL_ERR_INVALID_CHAR 2
-#define PL_ERR_TOO_LONG_ITEM 3
-#define PL_ERR_SET_AFTER_COMMAND 4
-#define PL_ERR_REL_AFTER_COMMAND 5
-#define PL_ERR_UNIVERSE_NOT_LINE1 6
-#define PL_ERR_BAD_CMD_PARAM 7
-#define PL_ERR_MALLOC_CMD 8
-#define PL_ERR_ITEM_NOT_IN_UNIVERSE 9
-#define PL_ERR_ITEM_IN_COMMANDS 10
-#define PL_ERR_ITEM_IN_SET_ALREADY 11
-#define PL_ERR_REL_ITEM_MISSING 12
-#define PL_ERR_MISSING_PARENTHESIS 13
-#define PL_ERR_ITEMS_IN_RELATION_ALREADY 14
+#define PL_ERR_INVALID_CMD 11
+#define PL_ERR_INVALID_CHAR 12
+#define PL_ERR_TOO_LONG_ITEM 13
+#define PL_ERR_SET_AFTER_COMMAND 14
+#define PL_ERR_REL_AFTER_COMMAND 15
+#define PL_ERR_UNIVERSE_NOT_LINE1 16
+#define PL_ERR_BAD_CMD_PARAM 17
+#define PL_ERR_MALLOC_CMD 18
+#define PL_ERR_ITEM_NOT_IN_UNIVERSE 19
+#define PL_ERR_ITEM_IN_COMMANDS 20
+#define PL_ERR_ITEM_IN_SET_ALREADY 21
+#define PL_ERR_REL_ITEM_MISSING 22
+#define PL_ERR_MISSING_PARENTHESIS 23
+#define PL_ERR_ITEMS_IN_RELATION_ALREADY 24
+
 
 #define ERR_CMD_LINE_NOEX 1
 #define ERR_CMD_NOEX 2
 
+#define STR_WRONG_PARAM_LINE "ERROR: Chybny parametr prikazu (neexistujici radek?) na radku %d!\n"
 
-/** addRelationItem prida prvky do relace
- *
- * \param prel je ukazatel na ukazatel na relaci, nesmi byt NULL
- * \param name1 a name 2 jsou retezce predstavujici prvky relace
- *
- */
-void addRelationItem(TRelationItem **prel, char *name1, char *name2)
-{
-    assert(prel != NULL);
-
-    if(findRelXY(*prel, name1, name2) != NULL) /**< test, jestli dvojice uz je v relaci obsazena */
-    {
-        return;
-    }
-
-    TRelationItem *next = *prel;
-    *prel = malloc(sizeof(TRelationItem));
-    if(*prel == NULL)
-    {
-        fprintf(stderr, "ERROR: Nepodarilo se alokovat dostatek mista v pameti.\n");
-        exit(ERR_MALLOC);
-    }
-    (*prel)->name1 = malloc(strlen(name1)+1);
-    if((*prel)->name1 == NULL)
-    {
-        fprintf(stderr, "ERROR: Nepodarilo se alokovat dostatek mista v pameti.\n");
-        exit(ERR_MALLOC);
-    }
-    strcpy((*prel)->name1, name1);
-    (*prel)->name2 = malloc(strlen(name2)+1);
-    if((*prel)->name2 == NULL)
-    {
-        fprintf(stderr, "ERROR: Nepodarilo se alokovat dostatek mista v pameti.\n");
-        exit(ERR_MALLOC);
-    }
-    strcpy((*prel)->name2, name2);
-    (*prel)->next = next;
+#define JUMP(iline) \
+{ \
+    if(iline > lines) \
+    { \
+        fprintf(stderr, STR_WRONG_PARAM_LINE, ln + 1); \
+        return ERR_CMD_LINE_NOEX; \
+    } \
+    if(iline > 0) \
+    { \
+        ln = iline - 2; \
+    } \
 }
 
-/** printRelation vytiskne vechny prvky relace na stdout
- *
- * \param rel je ukazatel na relaci
- *
- */
-void printRelation(TRelationItem *rel)
-{
-    printf("R");
-    while(rel != NULL)
-    {
-        printf(" (%s %s)", rel->name1, rel->name2);
-        rel = rel->next;
-    }
-    printf("\n");
-}
-
-/** strInRelation otestuje, jestli je dvojice retezcu str1 a str2 prvkem relace rel
+/** \brief strInRelation otestuje, jestli je dvojice retezcu str1 a str2 prvkem relace rel
  *
  * \param rel je ukazatel na relaci
  * \param str1 je prvni prvek relace, ktery hledame
@@ -126,6 +87,7 @@ void printRelation(TRelationItem *rel)
  * \return vraci 1, kdyz je dvojice v relaci nalezena, jinak 0
  *
  */
+ /*
 int strInRelation(TRelationItem *rel, char *str1, char *str2)
 {
     while(rel != NULL)
@@ -138,8 +100,9 @@ int strInRelation(TRelationItem *rel, char *str1, char *str2)
     }
     return 0;
 }
+*/
 
-/** freeWordList uvolni pamet z celeho seznamu retezcu, vcetne retezcu o kterych predpoklada, ze jsou alokovane dynamicky
+/** \brief freeWordList uvolni pamet z celeho seznamu retezcu, vcetne retezcu o kterych predpoklada, ze jsou alokovane dynamicky
  *
  * \param item je ukazatel na prvni prvek seznamu
  *
@@ -157,7 +120,7 @@ void freeWordList(TWordListItem *item)
     }
 }
 
-/** freeRelationList uvolni pamet z celeho seznamu TRelationItem, vcetne retezcu o kterych predpoklada, ze jsou alokovane dynamicky
+/** \brief freeRelationList uvolni pamet z celeho seznamu TRelationItem, vcetne retezcu o kterych predpoklada, ze jsou alokovane dynamicky
  *
  * \param item je ukazatel na prvni prvek seznamu
  *
@@ -176,7 +139,7 @@ void freeRelationList(TRelationItem *item)
     }
 }
 
-/** hasOnlyEnLetters zkontorluje, jestli retezec obsahuje pouze mala a velka pismena anglicke abecedy
+/** \brief hasOnlyEnLetters zkontorluje, jestli retezec obsahuje pouze mala a velka pismena anglicke abecedy
  *
  * \param str je retezec, ktery se ma zkontrolovat
  * \return vraci 1 pokud retezec obsahuje jen mala a velka pismena anglicke abecedy, jinak 0
@@ -194,11 +157,17 @@ int hasOnlyEnLetters(char *str)
     return 1;
 }
 
+/** \brief strInArray hleda retezec v poli
+ *
+ * \param str je hledany retezec
+ * \param arr[] je pole, ve kterem hledame retezec str
+ * \return funkce vraci 1, pokud se retezec nachazi v poli, jinak vraci 0
+ *
+ */
 int strInArray(char *str, char *arr[], int arrSize)
 {
-    for(size_t i = 0; i < arrSize; i++)
+    for(int i = 0; i < arrSize; i++)
     {
-        //printf("%d %s\n", i, *(relCmds+i));
         if(strcmp(arr[i], str) == 0)
         {
             return 1;
@@ -207,7 +176,20 @@ int strInArray(char *str, char *arr[], int arrSize)
     return 0;
 }
 
-/** strInSetCmds1 zjisti, jesli se retezec str vyskytouje mezi mnozinovymi prikazy s 1 operandem
+/** \brief strInKeywords zjisti, jesli se retezec str vyskytuje mezi klicovymi slovy "true" a "false"
+ *
+ * \param str je hledany retezec
+ * \return vraci 1, kdyz je retezec mezi klicovymi slovy nalezen, jinak 0
+ *
+ */
+int strInKeywords(char *str)
+{
+    char *keywords[] = {"true", "false"};
+
+    return strInArray(str, keywords, sizeof(keywords)/sizeof(char*));
+}
+
+/** \brief strInSetCmds1 zjisti, jesli se retezec str vyskytuje mezi mnozinovymi prikazy s 1 operandem
  *
  * \param str je hledany retezec
  * \return vraci 1, kdyz je retezec mezi prikazy nalezen, jinak 0
@@ -215,22 +197,12 @@ int strInArray(char *str, char *arr[], int arrSize)
  */
 int strInSetCmds1(char *str)
 {
-    char *setCmds1[] = {"empty", "card", "complement"};
+    char *setCmds1[] = {"empty", "card", "complement", "select"};
 
     return strInArray(str, setCmds1, sizeof(setCmds1)/sizeof(char*));
-    /*
-    for(size_t i=0; i<sizeof(setCmds1)/sizeof(char*); i++)
-    {
-        //printf("%d %s\n", i, *(setCmds1+i));
-        if(strcmp(*(setCmds1+i), str) == 0)
-        {
-            return 1;
-        }
-    }
-    return 0;*/
 }
 
-/** strInSetCmds2 zjisti, jesli se retezec str vyskytouje mezi mnozinovymi prikazy se 2 operandy
+/** \brief strInSetCmds2 zjisti, jesli se retezec str vyskytuje mezi mnozinovymi prikazy se 2 operandy
  *
  * \param str je hledany retezec
  * \return vraci 1, kdyz je retezec mezi prikazy nalezen, jinak 0
@@ -241,18 +213,9 @@ int strInSetCmds2(char *str)
     char *setCmds2[] = {"union", "intersect", "minus", "subseteq", "subset", "equals"};
 
     return strInArray(str, setCmds2, sizeof(setCmds2)/sizeof(char*));
-    /*for(size_t i=0; i<sizeof(setCmds2)/sizeof(char*); i++)
-    {
-        //printf("%d %s\n", i, *(setCmds2+i));
-        if(strcmp(*(setCmds2+i), str) == 0)
-        {
-            return 1;
-        }
-    }
-    return 0;*/
 }
 
-/** strInRelCmds1 zjisti, jesli se retezec str vyskytouje mezi relacnimi prikazy s jednim operandem
+/** \brief strInRelCmds1 zjisti, jesli se retezec str vyskytuje mezi relacnimi prikazy s jednim operandem
  *
  * \param str je hledany retezec
  * \return vraci 1, kdyz je retezec mezi prikazy nalezen, jinak 0
@@ -261,21 +224,12 @@ int strInSetCmds2(char *str)
 int strInRelCmds1(char *str)
 {
     char *relCmds1[] = {"reflexive", "symmetric", "antisymmetric", "transitive", "function",
-                       "domain", "codomain"};
+                       "domain", "codomain", "closure_ref", "closure_sym", "closure_trans"};
 
     return strInArray(str, relCmds1, sizeof(relCmds1)/sizeof(char*));
-    /*for(size_t i=0; i<sizeof(relCmds)/sizeof(char*); i++)
-    {
-        //printf("%d %s\n", i, *(relCmds+i));
-        if(strcmp(*(relCmds+i), str) == 0)
-        {
-            return 1;
-        }
-    }
-    return 0;*/
 }
 
-/** strInRelCmds3 zjisti, jesli se retezec str vyskytouje mezi relacnimi prikazy se tremi operandy
+/** \brief strInRelCmds3 zjisti, jesli se retezec str vyskytuje mezi relacnimi prikazy se tremi operandy
  *
  * \param str je hledany retezec
  * \return vraci 1, kdyz je retezec mezi prikazy nalezen, jinak 0
@@ -286,19 +240,35 @@ int strInRelCmds3(char *str)
     char *relCmds3[] = {"injective", "surjective", "bijective"};
 
     return strInArray(str, relCmds3, sizeof(relCmds3)/sizeof(char*));
-    /*for(size_t i=0; i<sizeof(relCmds)/sizeof(char*); i++)
-    {
-        //printf("%d %s\n", i, *(relCmds+i));
-        if(strcmp(*(relCmds+i), str) == 0)
-        {
-            return 1;
-        }
-    }
-    return 0;*/
 }
 
+/** \brief strInSetCreateCmds zjisti, jesli se retezec str vyskytuje mezi prikazy, ktere vytvareji mnozinu
+ *
+ * \param str je hledany retezec
+ * \return vraci 1, kdyz je retezec mezi prikazy nalezen, jinak 0
+ *
+ */
+int strInSetCreateCmds(char *str)
+{
+    char *setCreateCmds[] = {"complement", "union", "intersect", "minus", "domain", "codomain"};
 
-/** printAllLines vytiskne vsechny seznamy ze vsech radku
+    return strInArray(str, setCreateCmds, sizeof(setCreateCmds)/sizeof(char*));
+}
+
+/** \brief strInSetCreateCmds zjisti, jesli se retezec str vyskytuje mezi prikazy, ktere vytvareji mnozinu
+ *
+ * \param str je hledany retezec
+ * \return vraci 1, kdyz je retezec mezi prikazy nalezen, jinak 0
+ *
+ */
+int strInRelationCreateCmds(char *str)
+{
+    char *relCreateCmds[] = {"closure_ref", "closure_sym", "closure_trans"};
+
+    return strInArray(str, relCreateCmds, sizeof(relCreateCmds)/sizeof(char*));
+}
+
+/** \brief printAllLines vytiskne vsechny seznamy ze vsech radku
  *
  * \param line je ukazatel na pole radku
  * \param lineNr je pocet platnych radku v poli
@@ -308,7 +278,7 @@ void printAllLines(TLine *line, int lineNr)
 {
     for(int i=0; i<lineNr; i++)
     {
-        if(line[i].set != NULL)
+        if(line[i].content == 'S' && line[i].set != NULL)
         {
             if(i == 0)
             {
@@ -322,7 +292,7 @@ void printAllLines(TLine *line, int lineNr)
 
             }
         }
-        if(line[i].relation != NULL)
+        if(line[i].content == 'R' && line[i].relation != NULL)
         {
             printf("%4d: ", i+1);
             printRelation(line[i].relation);
@@ -342,13 +312,28 @@ void printAllLines(TLine *line, int lineNr)
                 }
                 else
                 {
-                    printf("C %s %d %d %d\n", line[i].command->name, line[i].command->op[0], line[i].command->op[1], line[i].command->op[2]);
+
+                    if(strInRelCmds1(line[i].command->name) == 1)
+                    {
+                        printf("C %s %d\n", line[i].command->name, line[i].command->op[0]);
+                    }
+                    else
+                    {
+                        if(strInRelCmds3(line[i].command->name) == 1)
+                        {
+                            printf("C %s %d %d %d\n", line[i].command->name, line[i].command->op[0], line[i].command->op[1], line[i].command->op[2]);
+                        }
+                        else
+                        {
+                            printf("C Unknown command???\n");
+                        }
+                    }
                 }
             }
         }
         if(line[i].set == NULL && line[i].relation == NULL && line[i].command == NULL)
         {
-            printf("%4d: []\n", i+1);
+            printf("%4d: %c\n", i+1, line[i].content);
         }
 
     }
@@ -371,7 +356,7 @@ void freeAllLines(TLine *line, int lineNr)
     free(line);
 }
 
-/** processLine zpracuje tokeny z nacteneho radku
+/** \brief processLine zpracuje tokeny z nacteneho radku
  *  unviversum, mnoziny a relace ulozi do prislusnych radku v poli line[]
  *  prikazy jsou pouze ulozeny, ale neprovedeny, protoze nemame zatim nactene vsechny radky a nevime tedy, zda existuji
  *
@@ -398,22 +383,23 @@ int processLine(TWordListItem *token, int lineNr, int *wasCommand, TLine *line)
                 fprintf(stderr, "ERROR: Univerzum neni na radku 1!\n");
                 return PL_ERR_UNIVERSE_NOT_LINE1;
             }
+            line[lineNr - 1].content = 'S';
             token=token->next;
             while(token != NULL)
             {
                 if(hasOnlyEnLetters(token->name) == 0)
                 {
-                    fprintf(stderr, "ERROR: Vadny znak v prvku. Prvky musi obsahova jen mala a velka pismena anglicke abecedy!\n");
+                    fprintf(stderr, "ERROR: Vadny znak v prvku na radku %d. Prvky musi obsahovat jen mala a velka pismena anglicke abecedy!\n", lineNr);
                     return PL_ERR_INVALID_CHAR;
                 }
-                if(strInSetCmds1(token->name) == 1 || strInSetCmds2(token->name) == 1 || strInRelCmds1(token->name) == 1 || strInRelCmds3(token->name) == 1 || strcmp("true", token->name) == 0 || strcmp("false", token->name) == 0)
+                if(strInSetCmds1(token->name) == 1 || strInSetCmds2(token->name) == 1 || strInRelCmds1(token->name) == 1 || strInRelCmds3(token->name) == 1 || strInKeywords(token->name) == 1)
                 {
-                    fprintf(stderr, "ERROR: Prvek je obsazeny v prikazech!\n");
+                    fprintf(stderr, "ERROR: Prvek na radku %d je obsazeny v prikazech nebo klicovych slovech!\n", lineNr);
                     return PL_ERR_ITEM_IN_COMMANDS;
                 }
                 if(strInSet(line[UNIVERSUM_LINE - 1].set, token->name) == 1)
                 {
-                    fprintf(stderr, "ERROR: Prvek je uz v mnozine obsazen!\n");
+                    fprintf(stderr, "ERROR: Prvek na radku %d uz je v mnozine obsazen!\n", lineNr);
                     return PL_ERR_ITEM_IN_SET_ALREADY;
                 }
                 addSetItem(&line[UNIVERSUM_LINE - 1].set, token->name);
@@ -425,14 +411,15 @@ int processLine(TWordListItem *token, int lineNr, int *wasCommand, TLine *line)
             // printf("SetCMD\n");
             if(line[0].set == NULL)
             {
-                fprintf(stderr, "ERROR: Univerzum nebylo definovano a mame mnozinu!\n");
+                fprintf(stderr, "ERROR: Univerzum nebylo definovano a mame mnozinu na radku %d!\n", lineNr);
                 return PL_ERR_UNIVERSE_NOT_LINE1;
             }
             if(*wasCommand == 1)
             {
-                fprintf(stderr, "ERROR: Mnozina po prikazu Command!\n");
+                fprintf(stderr, "ERROR: Mnozina na radku %d po prikazu Command!\n", lineNr);
                 return PL_ERR_SET_AFTER_COMMAND;
             }
+            line[lineNr - 1].content = 'S';
             token=token->next;
             while(token != NULL)
             {
@@ -444,12 +431,12 @@ int processLine(TWordListItem *token, int lineNr, int *wasCommand, TLine *line)
                 } */
                 if(strInSet(line[0].set, token->name) == 0)
                 {
-                    fprintf(stderr, "ERROR: Prvek neni obsazeny v Univerzu!\n");
+                    fprintf(stderr, "ERROR: Prvek na radku %d neni obsazeny v Univerzu (vadne znaky?)!\n", lineNr);
                     return PL_ERR_ITEM_NOT_IN_UNIVERSE;
                 }
                 if(strInSet(line[lineNr - 1].set, token->name) == 1)
                 {
-                    fprintf(stderr, "ERROR: Prvek je uz v mnozine obsazen!\n");
+                    fprintf(stderr, "ERROR: Prvek na radku %d je uz v mnozine obsazen!\n", lineNr);
                     return PL_ERR_ITEM_IN_SET_ALREADY;
                 }
                 addSetItem(&line[lineNr - 1].set, token->name);
@@ -460,15 +447,15 @@ int processLine(TWordListItem *token, int lineNr, int *wasCommand, TLine *line)
         case 'R':
             if(line[0].set == NULL)
             {
-                fprintf(stderr, "ERROR: Univerzum nebylo definovano a mame relaci!\n");
+                fprintf(stderr, "ERROR: Univerzum nebylo definovano a mame relaci na radku %d!\n", lineNr);
                 return PL_ERR_UNIVERSE_NOT_LINE1;
             }
             if(*wasCommand == 1)
             {
-                fprintf(stderr, "ERROR: Relace po prikazu Command!\n");
+                fprintf(stderr, "ERROR: Relace na radku %d po prikazu Command!\n", lineNr);
                 return PL_ERR_REL_AFTER_COMMAND;
             }
-
+            line[lineNr - 1].content = 'R';
             char name1[MAX_ITEM_LEN + 1];
             char name2[MAX_ITEM_LEN + 1];
             token = token->next;
@@ -478,38 +465,38 @@ int processLine(TWordListItem *token, int lineNr, int *wasCommand, TLine *line)
                 token = token->next;
                 if(token == NULL)
                 {
-                    fprintf(stderr, "ERROR: Chybi parovy prvek relace!\n");
+                    fprintf(stderr, "ERROR: Chybne definovana relace na radku %d!\n", lineNr);
                     return PL_ERR_REL_ITEM_MISSING;
                 }
                 strcpy(name2, token->name);
                 token = token->next;
-                if(name1[0] == '(')
+                if(strlen(name1) > 1 && name1[0] == '(')
                 {
                     memmove(name1, name1 + 1, strlen(name1));
                 }
                 else
                 {
-                    fprintf(stderr, "ERROR: Chybi prvni zavorka u prvniho prvku relace!\n");
+                    fprintf(stderr, "ERROR: Chybne definovana relace na radku %d!\n", lineNr);
                     return PL_ERR_MISSING_PARENTHESIS;
                 }
-                if(name2[strlen(name2) - 1] == ')')
+                if(strlen(name2) > 0 && name2[strlen(name2) - 1] == ')')
                 {
                     name2[strlen(name2) - 1] = '\0';
                 }
                 else
                 {
-                    fprintf(stderr, "ERROR: Chybi druha zavorka u druheho prvku relace!\n");
+                    fprintf(stderr, "ERROR: Chybne definovana relace na radku %d!\n", lineNr);
                     return PL_ERR_MISSING_PARENTHESIS;
                 }
 
                 if(strInSet(line[0].set, name1) == 0 || strInSet(line[0].set, name2) == 0)
                 {
-                    fprintf(stderr, "ERROR: Prvek relace neni obsazen v univerzu!\n");
+                    fprintf(stderr, "ERROR: Prvek relace z radku %d neni obsazen v univerzu (vadne znaky?)!\n", lineNr);
                     return PL_ERR_ITEM_NOT_IN_UNIVERSE;
                 }
-                if(strInRelation(line[lineNr - 1].relation, name1, name2) == 1)
+                if(findRelXY(line[lineNr - 1].relation, name1, name2) != NULL)
                 {
-                    fprintf(stderr, "ERROR: Prvky jsou uz v relaci obsazeny!\n");
+                    fprintf(stderr, "ERROR: Prvek na radku %d uz je v relaci obsazen!\n", lineNr);
                     return PL_ERR_ITEMS_IN_RELATION_ALREADY;
                 }
                 addRelationItem(&line[lineNr - 1].relation, name1, name2);
@@ -517,6 +504,7 @@ int processLine(TWordListItem *token, int lineNr, int *wasCommand, TLine *line)
             printRelation(line[lineNr - 1].relation);
             break;
         case 'C':
+            line[lineNr - 1].content = 'C';
             *wasCommand = 1;
             token=token->next;
             int param = 0;
@@ -538,19 +526,27 @@ int processLine(TWordListItem *token, int lineNr, int *wasCommand, TLine *line)
                     case 2:
                     case 3:
                     case 4:
+                        for(int i = 0; i < strlen(token->name); i++)
+                        {
+                            if(token->name[i] < '0' || token->name[i] > '9')
+                            {
+                                fprintf(stderr, "ERROR: Parametr prikazu na radku %d neni cislo!\n", lineNr);
+                                return PL_ERR_BAD_CMD_PARAM;
+                            }
+                        }
                         if(sscanf(token->name, "%d", &op[param - 1]) != 1)
                         {
-                            fprintf(stderr, "ERROR: Parametr prikazu neni cislo!\n");
+                            fprintf(stderr, "ERROR: Parametr prikazu na radku %d neni cislo!\n", lineNr);
                             return PL_ERR_BAD_CMD_PARAM;
                         }
                         if(op[param - 1] < 1 || op[param - 1] > MAX_LINES)
                         {
-                            fprintf(stderr, "ERROR: Parametr prikazu (radek) je mimo rozsah 1-1000!\n");
+                            fprintf(stderr, "ERROR: Parametr prikazu (radek) na radku %d je mimo rozsah 1-1000!\n", lineNr);
                             return PL_ERR_BAD_CMD_PARAM;
                         }
                         break;
                     default:
-                        fprintf(stderr, "ERROR: Prikaz ma vice nez 4 parametry!\n");
+                        fprintf(stderr, "ERROR: Prikaz na radku %d ma vice nez 4 parametry!\n", lineNr);
                         return PL_ERR_INVALID_CMD;
                 }
                 param++;
@@ -574,15 +570,23 @@ int processLine(TWordListItem *token, int lineNr, int *wasCommand, TLine *line)
                 line[lineNr-1].command->op[i] = op[i];
             }
             //printf("Command: %s %d %d\n", line[lineNr-1].command->name, line[lineNr-1].command->op1, line[lineNr-1].command->op2);
+            if(strInSetCreateCmds(command) == 1)
+            {
+                line[lineNr-1].content = 'S';
+            }
+            if(strInRelationCreateCmds(command) == 1)
+            {
+                line[lineNr-1].content = 'R';
+            }
             break;
         default:
-            fprintf(stderr, "ERROR: Spatny prikaz! Povolene prikazy jsou pouze U, S, R, C!\n");
+            fprintf(stderr, "ERROR: Spatny prikaz na radku %d! Povolene prikazy jsou pouze U, S, R, C!\n", lineNr);
             return PL_ERR_INVALID_CMD;
     }
     return 0;
 }
 
-/** skipWhitesFromFile preskoci bile znaky pri nacitani soubori
+/** \brief skipWhitesFromFile preskoci bile znaky pri nacitani soubori
  *
  * \param fp je vstupni soubor
  * \param ch je ukazatel na posledni znak nacteny ze souboru (musi byt nacteny pred volanim)
@@ -597,10 +601,10 @@ void skipWhitesFromFile(FILE *fp, char *ch)
     }
 }
 
-/** getLineFromFile precte radek ze vstupniho souboru a vrati ho jako seznam tokenu
+/** \brief getLineFromFile precte radek ze vstupniho souboru a vrati ho jako seznam tokenu
  *
  * \param fp je vstupni soubor
- * \return vracit seznam tokenu jako struct _TWordListItem
+ * \return funkce vraci seznam tokenu jako struct _TWordListItem
  *
  */
 TWordListItem * getLineFromFile(FILE *fp)
@@ -611,8 +615,11 @@ TWordListItem * getLineFromFile(FILE *fp)
     char token[MAX_ITEM_LEN];
 
     char ch = fgetc(fp);
-    skipWhitesFromFile(fp, &ch);
-
+    //skipWhitesFromFile(fp, &ch);
+    if(ch != 'U' && ch != 'S' && ch != 'R' && ch != 'C')
+    {
+        return NULL;
+    }
     while(ch != EOF)
     {
         if(ch == ' ' || ch == '\t' || ch == '\n')
@@ -699,240 +706,240 @@ TWordListItem * getLineFromFile(FILE *fp)
     return tokenList;
 }
 
-/** processCommands zpracuje prikazy na radcich
+/** \brief processCommands zpracuje prikazy na radcich
  *
  * \param fileName je jmeno vstupniho souboru
+ * \param lines je pocet radku vstupniho souboru
  * \return vraci 0 pri uspesnem zpracovani, jinak kod chyby v pripade neuspechu
  *
  */
-int processCommands(TLine *line, int lineNr)
+int processCommands(TLine *line, int lines)
 {
     char command[MAX_ITEM_LEN];
 
-    for(int ln = 0; ln < lineNr; ln++)
+    for(int ln = 0; ln < lines; ln++)
     {
         if(line[ln].command != NULL)
         {
             strcpy(command, line[ln].command->name);
             int operand1 = line[ln].command->op[0];
-            if(operand1 > lineNr)
+            if(operand1 == 0 || operand1 > lines)
             {
-                fprintf(stderr, "ERROR: Prikaz pro neexistujici radek!\n");
+                fprintf(stderr, STR_WRONG_PARAM_LINE, ln + 1);
                 return ERR_CMD_LINE_NOEX;
             }
             int operand2 = line[ln].command->op[1];
-            if(operand2 > lineNr)
+            if(operand2 == 0 || operand2 > lines)
             {
                 if(strInSetCmds2(command) == 1 || strInRelCmds3(command) == 1) // druhy operand nas zajima jen pokud mame prikaz pro 2 operandy
                 {
-                    fprintf(stderr, "ERROR: Prikaz pro neexistujici radek!\n");
+                    fprintf(stderr, STR_WRONG_PARAM_LINE, ln + 1);
                     return ERR_CMD_LINE_NOEX;
                 }
             }
             int operand3 = line[ln].command->op[2];
-            if(operand3 > lineNr)
+            if(operand3 == 0 || operand3 > lines)
             {
                 if(strInRelCmds3(command) == 1) // treti operand nas zajima jen pokud mame prikaz pro 3 operandy
                 {
-                    fprintf(stderr, "ERROR: Prikaz pro neexistujici radek!\n");
+                    fprintf(stderr, STR_WRONG_PARAM_LINE, ln + 1);
                     return ERR_CMD_LINE_NOEX;
                 }
             }
             int operand4 = line[ln].command->op[3];
+            if(strInSetCmds1(command) == 1)
+            {
+                if(line[operand1 - 1].content != 'S')
+                {
+                    fprintf(stderr, "ERROR: Prikaz pro mnozinu na radku %d ukazuje na radek, na kterem neni mnozina!\n", ln + 1);
+                    return ERR_WRONG_LINE_TYPE;
+                }
+                if(operand3 > 0 || operand4 > 0)
+                {
+                    fprintf(stderr, "ERROR: Prilis mnoho operandu na radku %d!\n", ln + 1);
+                    return ERR_WRONG_COMMAND;
+                }
+            }
+            if(strInSetCmds2(command) == 1)
+            {
+                if(line[operand1 - 1].content != 'S' || line[operand2 - 1].content != 'S')
+                {
+                    fprintf(stderr, "ERROR: Prikaz pro mnozinu na radku %d ukazuje na radek, na kterem neni mnozina!\n", ln + 1);
+                    return ERR_WRONG_LINE_TYPE;
+                }
+                if(operand4 > 0)
+                {
+                    fprintf(stderr, "ERROR: Prilis mnoho operandu na radku %d!\n", ln + 1);
+                    return ERR_WRONG_COMMAND;
+                }
+            }
+            if(strInRelCmds1(command) == 1)
+            {
+                if(line[operand1 - 1].content != 'R')
+                {
+                    fprintf(stderr, "ERROR: Prikaz pro relaci na radku %d ukazuje na radek, na kterem neni relace!\n", ln + 1);
+                    return ERR_WRONG_LINE_TYPE;
+                }
+                if(operand3 > 0 || operand4 > 0)
+                {
+                    fprintf(stderr, "ERROR: Prilis mnoho operandu na radku %d!\n", ln + 1);
+                    return ERR_WRONG_COMMAND;
+                }
+            }
+            if(strInRelCmds3(command) == 1 && (line[operand1 - 1].content != 'R'  || line[operand2 - 1].content != 'S' || line[operand3 - 1].content != 'S'))
+            {
+                fprintf(stderr, "ERROR: Prikaz pro relaci na radku %d ukazuje na radek, na kterem neni relace!\n", ln + 1);
+                return ERR_WRONG_LINE_TYPE;
+            }
             // Set commands
             if(strcmp(command, "empty") == 0)
             {
                 if(!cmdEmpty(line[operand1-1].set))
                 {
-                    if(operand2 >= lineNr)
-                    {
-                        fprintf(stderr, "ERROR: Skok na neexistujici radek!\n");
-                        return ERR_CMD_LINE_NOEX;
-                    }
-                    if(operand2 > 0)
-                    {
-                        ln = operand2 - 2;
-                    }
+                    JUMP(operand2);
                 }
-                continue;
             }
-            if(strcmp(command, "card") == 0)
+            else if(strcmp(command, "card") == 0)
             {
                 cmdCard(line[operand1-1].set);
-                continue;
             }
-            if(strcmp(command, "complement") == 0)
+            else if(strcmp(command, "complement") == 0)
             {
-                cmdComplement(line[operand1-1].set, line[0].set, &line[ln].set);
-                continue;
+                cmdComplement(line[operand1-1].set, line[UNIVERSUM_LINE - 1].set, &line[ln].set);
             }
-            if(strcmp(command, "union") == 0)
+            else if(strcmp(command, "union") == 0)
             {
                 cmdUnion(line[operand1-1].set, line[operand2-1].set, &line[ln].set);
-                continue;
             }
-            if(strcmp(command, "intersect") == 0)
+            else if(strcmp(command, "intersect") == 0)
             {
                 cmdIntersect(line[operand1-1].set, line[operand2-1].set, &line[ln].set);
-                continue;
             }
-            if(strcmp(command, "minus") == 0)
+            else if(strcmp(command, "minus") == 0)
             {
                 cmdMinus(line[operand1-1].set, line[operand2-1].set, &line[ln].set);
-                continue;
             }
-            if(strcmp(command, "subseteq") == 0)
+            else if(strcmp(command, "subseteq") == 0)
             {
                 if(!cmdSubseteq(line[operand1-1].set, line[operand2-1].set))
                 {
-                    if(operand3 >= lineNr)
-                    {
-                        fprintf(stderr, "ERROR: Skok na neexistujici radek!\n");
-                        return ERR_CMD_LINE_NOEX;
-                    }
-                    if(operand3 > 0)
-                    {
-                        ln = operand3 - 2;
-                    }
+                    JUMP(operand3);
                 }
-                continue;
             }
-            if(strcmp(command, "subset") == 0)
+            else if(strcmp(command, "subset") == 0)
             {
                 if(!cmdSubset(line[operand1-1].set, line[operand2-1].set))
                 {
-                    if(operand3 >= lineNr)
-                    {
-                        fprintf(stderr, "ERROR: Skok na neexistujici radek!\n");
-                        return ERR_CMD_LINE_NOEX;
-                    }
-                    if(operand3 > 0)
-                    {
-                        ln = operand3 - 2;
-                    }
+                    JUMP(operand3);
                 }
-                continue;
             }
-            if(strcmp(command, "equals") == 0)
+            else if(strcmp(command, "equals") == 0)
             {
                 if(!cmdEquals(line[operand1-1].set, line[operand2-1].set))
                 {
-                    if(operand3 >= lineNr)
-                    {
-                        fprintf(stderr, "ERROR: Skok na neexistujici radek!\n");
-                        return ERR_CMD_LINE_NOEX;
-                    }
-                    if(operand3 > 0)
-                    {
-                        ln = operand3 - 2;
-                    }
+                    JUMP(operand3);
                 }
-                continue;
             }
-
+            else if(strcmp(command, "select") == 0)
+            {
+                if(operand2==0)
+                {
+                    fprintf(stderr, STR_WRONG_PARAM_LINE, ln + 1);
+                    return ERR_CMD_LINE_NOEX;
+                }
+                if(!cmdSelect(line[operand1-1].set))
+                {
+                    JUMP(operand2);
+                }
+            }
             // Relation commands
-            if(strcmp(command, "reflexive") == 0)
+            else if(strcmp(command, "reflexive") == 0)
             {
-                cmdReflexive(line[operand1-1].relation);
-                continue;
+                if(!cmdReflexive(line[operand1-1].relation, line[UNIVERSUM_LINE - 1].set))
+                {
+                    JUMP(operand2);
+                }
             }
-            if(strcmp(command, "symmetric") == 0)
+            else if(strcmp(command, "symmetric") == 0)
             {
-                cmdSymmetric(line[operand1-1].relation);
-                continue;
+                if(!cmdSymmetric(line[operand1-1].relation))
+                {
+                    JUMP(operand2)
+                }
             }
-            if(strcmp(command, "antisymmetric") == 0)
+            else if(strcmp(command, "antisymmetric") == 0)
             {
-                cmdAntisymmetric(line[operand1-1].relation);
-                continue;
+                if(!cmdAntisymmetric(line[operand1-1].relation))
+                {
+                    JUMP(operand2)
+                }
             }
-            if(strcmp(command, "transitive") == 0)
+            else if(strcmp(command, "transitive") == 0)
             {
-                cmdTransitive(line[operand1-1].relation);
-                continue;
+                if(!cmdTransitive(line[operand1-1].relation))
+                {
+                    JUMP(operand2)
+                }
             }
-            if(strcmp(command, "function") == 0)
+            else if(strcmp(command, "function") == 0)
             {
                 if(!cmdFunction(line[operand1-1].relation))
                 {
-                    if(operand2 >= lineNr)
-                    {
-                        fprintf(stderr, "ERROR: Skok na neexistujici radek!\n");
-                        return ERR_CMD_LINE_NOEX;
-                    }
-                    if(operand2 > 0)
-                    {
-                        ln = operand2 - 2;
-                    }
+                    JUMP(operand2)
                 }
-                continue;
             }
-            if(strcmp(command, "domain") == 0)
+            else if(strcmp(command, "domain") == 0)
             {
                 cmdDomain(line[operand1-1].relation, &line[ln].set);
-                continue;
             }
-            if(strcmp(command, "codomain") == 0)
+            else if(strcmp(command, "codomain") == 0)
             {
                 cmdCodomain(line[operand1-1].relation, &line[ln].set);
-                continue;
             }
-            if(strcmp(command, "injective") == 0)
+            else if(strcmp(command, "injective") == 0)
             {
                 if(!cmdInjective(line[operand1-1].relation, line[operand2-1].set, line[operand3-1].set))
                 {
-                    if(operand4 >= lineNr)
-                    {
-                        fprintf(stderr, "ERROR: Skok na neexistujici radek!\n");
-                        return ERR_CMD_LINE_NOEX;
-                    }
-                    if(operand4 > 0)
-                    {
-                        ln = operand4 - 2; /**< skok na radek operand4 */
-                    }
+                    JUMP(operand4);
                 }
-                continue;
             }
-            if(strcmp(command, "surjective") == 0)
+            else if(strcmp(command, "surjective") == 0)
             {
                 if(!cmdSurjective(line[operand1-1].relation, line[operand2-1].set, line[operand3-1].set))
                 {
-                    if(operand4 >= lineNr)
-                    {
-                        fprintf(stderr, "ERROR: Skok na neexistujici radek!\n");
-                        return ERR_CMD_LINE_NOEX;
-                    }
-                    if(operand4 > 0)
-                    {
-                        ln = operand4 - 2; /**< skok na radek operand4 */
-                    }
+                    JUMP(operand4);
                 }
-                continue;
             }
-            if(strcmp(command, "bijective") == 0)
+            else if(strcmp(command, "bijective") == 0)
             {
                 if(!cmdBijective(line[operand1-1].relation, line[operand2-1].set, line[operand3-1].set))
                 {
-                    if(operand4 >= lineNr)
-                    {
-                        fprintf(stderr, "ERROR: Skok na neexistujici radek!\n");
-                        return ERR_CMD_LINE_NOEX;
-                    }
-                    if(operand4 > 0)
-                    {
-                        ln = operand4 - 2; /**< skok na radek operand4 */
-                    }
+                    JUMP(operand4);
                 }
-                continue;
             }
-            fprintf(stderr, "ERROR: Neznamy prikaz!\n");
-            return ERR_UKNOWN_COMMAND;
+            else if(strcmp(command, "closure_ref") == 0)
+            {
+                cmdClosureRef(line[operand1-1].relation, line[UNIVERSUM_LINE - 1].set, &line[ln].relation);
+            }
+            else if(strcmp(command, "closure_sym") == 0)
+            {
+                cmdClosureSym(line[operand1-1].relation, &line[ln].relation);
+            }
+            else if(strcmp(command, "closure_trans") == 0)
+            {
+                cmdClosureTrans(line[operand1-1].relation, &line[ln].relation);
+            }
+            else
+            {
+                fprintf(stderr, "ERROR: Neznamy prikaz!\n");
+                return ERR_WRONG_COMMAND;
+            }
         }
     }
     return ERR_OK;
 }
 
-/** processFile zpracuje vstupni soubor podle zadani
+/** \brief processFile zpracuje vstupni soubor podle zadani
  *
  * \param fileName je jmeno vstupniho souboru
  * \return vraci 0 pri uspesnem zpracovani, jinak kod chyby v pripade neuspechu
@@ -1000,7 +1007,7 @@ int processFile(char *fileName)
                     // nic se nenactelo, ale jsme uz na konci souboru, tak to je OK
                     break;
                 }
-                fprintf(stderr, "Nepodarilo se nacist vstupni radek nebo je prazdny!");
+                fprintf(stderr, "Chyba na radku %d nebo je radek prazdny!", lineNr + 1);
                 freeAllLines(line, lineNr);
                 return ERR_EMPTY_LINE;
             }
@@ -1028,7 +1035,7 @@ int processFile(char *fileName)
     return ERR_OK;
 }
 
-/** main nacte argument (jmeno souboru) z prikazoveho radku
+/** \brief main nacte argument (jmeno souboru) z prikazoveho radku
  *  a zavola processFile() na zpracovani souboru
  *
  * \param argc je pocet parametru na prikazove radce (vc. vlastniho spustitelneho souboru)
@@ -1040,6 +1047,8 @@ int main(int argc, char *argv[])
 {
     if(argc == 2)
     {
+        time_t t;
+        srand((unsigned) time(&t));
         int result = processFile(argv[1]);
         if(result != 0)
         {
