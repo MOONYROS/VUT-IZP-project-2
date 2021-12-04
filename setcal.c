@@ -29,10 +29,6 @@
 #include <stdbool.h>
 #include <time.h>
 
-#include "setcal_common.h"
-#include "setcmd.h"
-#include "relcmd.h"
-
 #define ERR_OK 0
 #define ERR_NR_ARG 1
 #define ERR_FOPEN 2
@@ -60,7 +56,6 @@
 #define PL_ERR_MISSING_PARENTHESIS 23
 #define PL_ERR_ITEMS_IN_RELATION_ALREADY 24
 
-
 #define ERR_CMD_LINE_NOEX 1
 #define ERR_CMD_NOEX 2
 
@@ -77,6 +72,907 @@
     { \
         ln = iline - 2; \
     } \
+}
+
+#define MAX_ITEM_LEN 30
+#define MAX_LINES 1000
+#define MAX_LINE_PARAMS 4
+#define LINES_ALLOC_SIZE 3
+#define UNIVERSUM_LINE 1
+
+#define ERR_MALLOC 6
+
+typedef struct _TWordListItem
+{
+    char *name;
+    struct _TWordListItem *next;
+} TWordListItem;
+
+typedef struct _TRelationItem
+{
+    char *name1;
+    char *name2;
+    struct _TRelationItem *next;
+} TRelationItem;
+
+typedef struct _TCommand
+{
+    char *name;
+    int op[MAX_LINE_PARAMS];
+} TCommand;
+
+typedef struct _TLine
+{
+    char content;
+    TWordListItem *set;
+    TRelationItem *relation;
+    TCommand *command;
+} TLine;
+
+/** \brief strInSet otestuje, jestli je retezec str prvkem mnoziny set
+ *
+ * \param set je ukazatel na mnozinu
+ * \param str je retezec, ktery hledame
+ * \return vraci 1, kdyz je retezec v mnozine nalezen, jinak 0
+ *
+ */
+int strInSet(TWordListItem *set, char *str)
+{
+    while(set != NULL)
+    {
+        if(strcmp(set->name, str) == 0)
+        {
+            return 1;
+        }
+        set = set->next;
+    }
+    return 0;
+}
+
+/** \brief addSetItem prida prvek do mnoziny
+ *
+ * \param pset je ukazatel na ukazatel na mnozinu, nesmi byt NULL
+ * \param item je retezec predstavujici prvek mnoziny
+ *
+ */
+void addSetItem(TWordListItem **pset, char *item)
+{
+    assert(pset != NULL);
+
+    if(strInSet(*pset, item) == 1)
+    {
+        return;
+    }
+
+    TWordListItem *next = *pset;
+    *pset = malloc(sizeof(TWordListItem));
+    (*pset)->name = malloc(strlen(item)+1);
+    strcpy((*pset)->name, item);
+    (*pset)->next = next;
+}
+
+/** \brief printWordList vytiskne prvky do mnoziny oddelene ' ' na stdout
+ *
+ * \param set je ukazatel na mnozinu
+ *
+ */
+void printWordList(TWordListItem *set)
+{
+    while(set != NULL)
+    {
+        printf(" %s", set->name);
+        set = set->next;
+    }
+    printf("\n");
+}
+
+/** \brief printSet vytiskne danou mnozinu
+ *
+ * \param set je ukazatel na mnozinu
+ *
+ */
+void printSet(TWordListItem *set)
+{
+    printf("S");
+    printWordList(set);
+}
+
+/** \brief printUniversum vytiskne danou mnozinu
+ *
+ * \param set je ukazatel na mnozinu
+ *
+ */
+void printUniversum(TWordListItem *set)
+{
+    printf("U");
+    printWordList(set);
+}
+
+/** \brief printRelation vytiskne vechny prvky relace na stdout
+ *
+ * \param rel je ukazatel na relaci
+ *
+ */
+void printRelation(TRelationItem *rel)
+{
+    printf("R");
+    while(rel != NULL)
+    {
+        printf(" (%s %s)", rel->name1, rel->name2);
+        rel = rel->next;
+    }
+    printf("\n");
+}
+
+TRelationItem *findRelX(TRelationItem *rel, char *x)
+{
+    while(rel != NULL)
+    {
+        if(strcmp(rel->name1, x)==0)
+        {
+            return rel;
+        }
+        rel = rel->next;
+    }
+    return NULL;
+}
+
+TRelationItem *findRelY(TRelationItem *rel, char *y)
+{
+    while(rel != NULL)
+    {
+        if(strcmp(rel->name2, y)==0)
+        {
+            return rel;
+        }
+        rel = rel->next;
+    }
+    return NULL;
+}
+
+TRelationItem *findRelXY(TRelationItem *rel, char *x, char *y)
+{
+    while(rel != NULL)
+    {
+        if((strcmp(rel->name1, x)==0) && (strcmp(rel->name2, y)==0))
+        {
+            return rel;
+        }
+        rel = rel->next;
+    }
+    return NULL;
+}
+
+int countRelX(TRelationItem *rel, char *x)
+{
+    int cnt = 0;
+    while(rel != NULL)
+    {
+        if(strcmp(rel->name1, x)==0)
+        {
+            cnt++;
+        }
+        rel = rel->next;
+    }
+    return cnt;
+}
+
+int countRelY(TRelationItem *rel, char *y)
+{
+    int cnt = 0;
+    while(rel != NULL)
+    {
+        if(strcmp(rel->name2, y)==0)
+        {
+            cnt++;
+        }
+        rel = rel->next;
+    }
+    return cnt;
+}
+
+/** \brief countElements spocita prvky v mnozine set1
+ *
+ * \param set1 je ukazatel na mnozinu
+ * \return vraci pocet prvku v mnozine
+ *
+ */
+int countElements(TWordListItem *set1)
+{
+    int elementCount = 0; /**< elementCount pocita jednotlive prvky v set1 */
+    while(set1 != NULL)
+    {
+        elementCount++;
+        set1 = set1->next;
+    }
+    return elementCount;
+}
+
+/** \brief addRelationItem prida prvky do relace
+ *
+ * \param prel je ukazatel na ukazatel na relaci, nesmi byt NULL
+ * \param name1 je prvni prvek relace
+ * \param name2 je druhy prvek relace
+ *
+ */
+void addRelationItem(TRelationItem **prel, char *name1, char *name2)
+{
+    assert(prel != NULL);
+
+    if(findRelXY(*prel, name1, name2) != NULL) /**< test, jestli dvojice uz je v relaci obsazena */
+    {
+        return;
+    }
+
+    TRelationItem *next = *prel;
+    *prel = malloc(sizeof(TRelationItem));
+    if(*prel == NULL)
+    {
+        fprintf(stderr, "ERROR: Nepodarilo se alokovat dostatek mista v pameti.\n");
+        exit(ERR_MALLOC);
+    }
+    (*prel)->name1 = malloc(strlen(name1)+1);
+    if((*prel)->name1 == NULL)
+    {
+        fprintf(stderr, "ERROR: Nepodarilo se alokovat dostatek mista v pameti.\n");
+        exit(ERR_MALLOC);
+    }
+    strcpy((*prel)->name1, name1);
+    (*prel)->name2 = malloc(strlen(name2)+1);
+    if((*prel)->name2 == NULL)
+    {
+        fprintf(stderr, "ERROR: Nepodarilo se alokovat dostatek mista v pameti.\n");
+        exit(ERR_MALLOC);
+    }
+    strcpy((*prel)->name2, name2);
+    (*prel)->next = next;
+}
+
+/** \brief cmdEmpty tiskne a vraci true nebo false podle toho, jestli je mnozina definovana na radku A prazdna nebo neprazdna
+ *
+ * \param set1 je ukazatel na mnozinu
+ * \return vraci true (1), pokud je mnozina prazdna, jinak false (0)
+ *
+ */
+int cmdEmpty(TWordListItem *set1)
+{
+    if(set1 == NULL)
+    {
+        printf("true\n");
+        return true;
+    }
+    else
+    {
+        printf("false\n");
+        return false;
+    }
+}
+
+/** \brief cmdCard tiskne pocet prvku v mnozine set1
+ *
+ * \param set1 je ukazatel na mnozinu (radek), obsahuje ukazatel na sebe sama, dokud neni NULL, tak se pocitaji prvky
+ *
+ */
+void cmdCard(TWordListItem *set1)
+{
+    printf("%d\n", countElements(set1));
+}
+
+/** \brief cmdComplement tiskne mnozinovy doplnek k zadane mnozine
+ *
+ * \param set1 je ukazatel na danou mnozinu
+ * \param universum je ukazatelm na mnozinu vsech prvku
+ * \param *resSet je ukazatel na ukazatel na vyslednou mnozinu
+ *
+ */
+void cmdComplement(TWordListItem *set1, TWordListItem *universum, TWordListItem **resSet) /// Petana
+{
+    assert(resSet != NULL);
+
+    while(universum != NULL)
+    {
+        if(!strInSet(set1, universum->name))
+        {
+            addSetItem(resSet, universum->name);
+        }
+        universum = universum->next;
+    }
+    printSet(*resSet);
+}
+
+/** \brief cmdUnion tiske sjednoceni mnozin set1 a set2
+ *
+ * \param set1 je ukazatel na prvni mnozinu
+ * \param set2 je ukazatel na druhou mnozinu
+ * \param resSet je ukazatel na ukazatel, do ktereho je ulozena vysledna mnozina
+ *
+ */
+void cmdUnion(TWordListItem *set1, TWordListItem *set2, TWordListItem **resSet) /// mikki
+{
+    assert(resSet != NULL);
+
+    while(set1 != NULL)  // vsechno z mnoziny set1 vypiseme na vystup
+    {
+        addSetItem(resSet, set1->name);
+        set1 = set1->next;
+    }
+    while(set2 != NULL)  // vsechno z mnoziny set2 pridame taky. duplicity se nevlozi
+    {
+        addSetItem(resSet, set2->name);
+        set2 = set2->next;
+    }
+    printSet(*resSet);
+}
+
+/** \brief cmdIntersect tiskne prunik mnozin set1 a set2
+ *
+ * \param set1 je ukazatel na prvni mnozinu
+ * \param set2 je ukazatel na druhou mnozinu
+ * \param resSet je ukazatel na ukazatel, do ktereho je ulozena vysledna mnozina
+ *
+ */
+void cmdIntersect(TWordListItem *set1, TWordListItem *set2, TWordListItem **resSet)
+{
+    assert(resSet != NULL);
+
+    while(set1 != NULL)
+    {
+        if(strInSet(set2, set1->name))
+        {
+            addSetItem(resSet, set1->name);
+        }
+        set1 = set1->next;
+    }
+    printSet(*resSet);
+}
+
+/** \brief cmdMinus tiskne rozdil mnozin set1 a set2
+ *
+ * \param set1 je ukazatel na prvni mnozinu
+ * \param set2 je ukazatel na druhou mnozinu
+ * \param resSet je ukazatel na ukazatel, do ktereho je ulozena vysledna mnozina
+ *
+ */
+void cmdMinus(TWordListItem *set1, TWordListItem *set2, TWordListItem **resSet)
+{
+    assert(resSet != NULL);
+
+    while(set1 != NULL)
+    {
+        if(strInSet(set2, set1->name) == 0)
+        {
+            addSetItem(resSet, set1->name);
+        }
+        set1 = set1->next;
+    }
+    printSet(*resSet);
+}
+
+/** \brief cmdSubseteqNoPrint vraci true nebo false podle toho, jestli je mnozina set1 podmnozinou mnoziny set2
+ *
+ * \param set1 je ukazatel na mnozinu 1
+ * \param set2 je ukazatel na mnozinu 2
+ * \return vraci true (1), pokud je mnozina set1 podmnozinou mnoziny set1, jinak false (0)
+ *
+ */
+int cmdSubseteqNoPrint(TWordListItem *set1, TWordListItem *set2) /// Ondra
+{
+    while (set1 != NULL)
+    {
+        if(strInSet(set2, set1->name) == 0)
+        {
+            return false;
+        }
+        set1 = set1->next;
+    }
+    return true;
+}
+
+/** \brief cmdEqualsNoPrint vraci true nebo false, jestli jsou mnoziny rovny
+ *
+ * \param set1 ukazatel na prvni mnozinu
+ * \param set2 ukazatel na druhou mnozinu
+ * \return vraci true (1), pokud jsou si mnoziny rovny, jinak false (0)
+ *
+ */
+int cmdEqualsNoPrint(TWordListItem *set1, TWordListItem *set2)
+{
+    if(countElements(set1) != countElements(set2))
+    {
+        return false;
+    }
+    while(set1 != NULL)
+    {
+        if(strInSet(set2, set1->name) == 0)
+        {
+            return false;
+        }
+        set1 = set1->next;
+    }
+    return true;
+}
+
+/** \brief cmdSubseteq vraci a tiskne true nebo false podle toho, jestli je mnozina set1 podmnozinou mnoziny set2
+ *
+ * \param set1 je ukazatel na mnozinu 1
+ * \param set2 je ukazatel na mnozinu 2
+ * \return vraci true (1), pokud je mnozina set1 podmnozinou mnoziny set1, jinak false (0)
+ *
+ */
+int cmdSubseteq(TWordListItem *set1, TWordListItem *set2) /// Ondra
+{
+    if(cmdSubseteqNoPrint(set1, set2))
+    {
+        printf("true\n");
+        return true;
+    }
+    else
+    {
+        printf("false\n");
+        return false;
+    }
+}
+
+/** \brief cmdSubset kontroluje, zda je množina valstní (true) podmnozinou nebo ne (false)
+ *
+ * \param set1 je ukazatel na prvni mnozinu (pripadnou podmnozinu)
+ * \param set2 je ukazatel na druhou mnozinu
+ * \return true pokud je set1 vlastni podmnozinou, false pokud neni
+ *
+ */
+int cmdSubset(TWordListItem *set1, TWordListItem *set2)    /// Petana
+{
+    if(!(cmdEqualsNoPrint(set1, set2))&&(cmdSubseteqNoPrint(set1, set2)))
+    {
+        printf("true\n");
+        return true;
+    }
+    else
+    {
+        printf("false\n");
+        return false;
+    }
+}
+
+/** \brief cmdEquals tiskne a vraci true nebo false, jestli jsou mnoziny rovny
+ *
+ * \param set1 ukazatel na prvni mnozinu
+ * \param set2 ukazatel na druhou mnozinu
+ * \return vraci true (1), pokud jsou si mnoziny rovny, jinak false (0)
+ *
+ */
+int cmdEquals(TWordListItem *set1, TWordListItem *set2)    /// mikki - upravil MOONYROS
+{
+    if(cmdEqualsNoPrint(set1, set2))
+    {
+        printf("true\n");
+        return true;
+    }
+    else
+    {
+        printf("false\n");
+        return false;
+    }
+}
+
+/** \brief cmdSelect tiskne nahodny prvek z mnoziny set1 a vraci false, pokud je set1 prazdna
+ *
+ * \param set1 je ukazatel na mnozinu
+ * \return vraci false (0), pokud je mnozina prazdna, jinak true (1)
+ *
+ */
+int cmdSelect(TWordListItem *set1)
+{
+    if(set1 != NULL)
+    {
+        int items = countElements(set1);
+        int nrSeek = rand() % items;
+        // printf("mame %d prvku a posuneme se %d krat\n", items, nrSeek);
+        while(nrSeek > 0)
+        {
+            set1 = set1->next;
+            nrSeek--;
+        }
+        printf("%s\n", set1->name);
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+/** \brief cmdReflexive tiskne a vraci true nebo false podle toho, jestli je relace reflexivni
+ *
+ * \param rel je ukazatel na seznam prvku relace
+ * \return vraci true (1), pokud je relace reflexivni, jinak false (0)
+ *
+ */
+int cmdReflexive(TRelationItem *rel, TWordListItem *universum)
+{
+    while(universum != NULL)
+    {
+        if (findRelXY(rel, universum->name, universum->name) == NULL)
+        {
+            printf ("false\n");
+            return false;
+        }
+        universum = universum->next;
+    }
+    printf ("true\n");
+    return true;
+}
+
+
+/** \brief cmdSymmetric tiskne a vraci true pokud je relace symetricka, false pokud neni
+ *
+ * \param rel je ukazatel na danou relaci
+ * \return vraci true (1), pokud je relace symetricka, jinak false (0)
+ *
+ */
+int cmdSymmetric(TRelationItem *rel) /// Petana
+{
+    TRelationItem *tmpRel = rel;
+    while(tmpRel != NULL)
+    {
+        if(strcmp(tmpRel->name1, tmpRel->name2) != 0)
+        {
+            TRelationItem *secRel = rel;
+            while(secRel != NULL)
+            {
+                if((strcmp(tmpRel->name1, secRel->name2) == 0) && (strcmp(tmpRel->name2, secRel->name1) == 0))
+                {
+                    break;
+                }
+                secRel = secRel->next;
+            }
+            if(secRel == NULL)
+            {
+                printf("false\n");
+                return false;
+            }
+        }
+        tmpRel = tmpRel->next;
+    }
+    printf("true\n");
+    return true;
+}
+
+/** \brief cmdAntisymmetric tiskne true nebo false, jestli je relace antisymetricka
+ *
+ * \param rel je ukazatel na seznam prvku relace
+ * \return vraci true (1), pokud je relace antisymetricka, jinak false (0)
+ *
+ */
+int cmdAntisymmetric(TRelationItem *rel) /// mikki
+{
+    TRelationItem *origRel = rel;
+    while(rel != NULL)
+    {
+        if(strcmp(rel->name1, rel->name2) != 0)
+        {
+            TRelationItem *tmpRel = origRel;
+            while(tmpRel != NULL)
+            {
+                if((strcmp(rel->name1, tmpRel->name2) == 0) && (strcmp(rel->name2, tmpRel->name1) == 0))
+                {
+                    printf("false\n");
+                    return false;
+                }
+                tmpRel = tmpRel->next;
+            }
+        }
+        rel = rel->next;
+    }
+    printf("true\n");
+    return true;
+}
+
+/** \brief cmdTransitive tiskne a vraci true nebo false, jestli je relace rel tranzitivni
+ *
+ * \param rel je ukazatel na seznam prvku relace
+ * \return vraci true (1), pokud je relace tranzitivni, jinak false (0)
+ *
+ */
+int cmdTransitive(TRelationItem *rel)
+{
+    TRelationItem *firstRel = rel;
+    TRelationItem *secondRel;
+    while(firstRel != NULL)
+    {
+        secondRel = rel;
+        while(secondRel != NULL)
+        {
+            if(firstRel != secondRel && strcmp(firstRel->name2, secondRel->name1) == 0)
+            {
+                if(findRelXY(rel, firstRel->name1, secondRel->name2) == NULL)
+                {
+                    printf("false\n");
+                    return false;
+                }
+            }
+            secondRel = secondRel->next;
+        }
+        firstRel = firstRel->next;
+    }
+    printf("true\n");
+    return true;
+}
+
+/** \brief cmdFunction tiskne a vraci true nebo false, jestli je relace rel funkci
+ *
+ * \param rel je ukazatel na seznam prvku relace
+ * \return vraci true (1), pokud je relace funkci, jinak false (0)
+ *
+ */
+int cmdFunction(TRelationItem *rel)
+{
+    while(rel != NULL)
+    {
+        TRelationItem *tmpRel = rel->next;
+        while(tmpRel != NULL)
+        {
+            if(strcmp(rel->name1, tmpRel->name1) == 0)
+            {
+                printf("false\n");
+                return false;
+            }
+            tmpRel = tmpRel->next;
+        }
+        rel = rel->next;
+    }
+    printf("true\n");
+    return true;
+}
+
+/** \brief cmdDomain tiskne definicni obor relace
+ *
+ * \param rel je ukazatel na danou relaci
+ * \param resSet je ukazatel na ukazatel na vysledny definicni obor
+ *
+ */
+void cmdDomain(TRelationItem *rel, TWordListItem **resSet) /// Petana
+{
+    assert(resSet != NULL);
+
+    while(rel != NULL)
+    {
+        addSetItem(resSet, rel->name1);
+        rel = rel->next;
+    }
+    printSet(*resSet);
+}
+
+/** \brief cmdCodomain tiskne obor hodnot funkce rel
+ *
+ * \param rel je ukazatel na seznam prvku relace
+ * \param resSet je ukazatel na ukazatel, do ktereho je ulozena vysledna mnozina
+ *
+ */
+void cmdCodomain(TRelationItem *rel, TWordListItem **resSet)
+{
+    assert(resSet != NULL);
+
+    while(rel != NULL)
+    {
+        addSetItem(resSet, rel->name2);
+        rel = rel->next;
+    }
+    printSet(*resSet);
+}
+
+/** \brief cmdInjective tiskne a vraci true nebo false, jestli je relace rel injektivni
+ *
+ * \param rel je ukazatel na seznam prvku relace
+ * \param set1 je ukazatel na mnozinu A
+ * \param set2 je ukazatel na mnozinu B
+ * \return vraci true (1), pokud je relace injektivni, jinak false (0)
+ *
+ */
+int cmdInjective(TRelationItem *rel, TWordListItem *set1, TWordListItem *set2)   /// Petana
+{
+    TRelationItem *tmpRel;
+    while(set2 != NULL)
+    {
+        if(countRelY(rel, set2->name) >= 2)
+        {
+            printf("false\n");
+            return false;
+        }
+        tmpRel = findRelY(rel, set2->name);
+        if(tmpRel != NULL)
+        {
+            if(!strInSet(set1, tmpRel->name1))
+            {
+                printf("false\n");
+                return false;
+            }
+        }
+        set2 = set2->next;
+    }
+    printf("true\n");
+    return true;
+}
+
+/** \brief cmdSurjective tiskne a vraci true nebo false, jestli je relace rel surjektivni
+ *
+ * \param rel je ukazatel na seznam prvku relace
+ * \param set1 je ukazatel na mnozinu A
+ * \param set2 je ukazatel na mnozinu B
+ * \return vraci true (1), pokud je relace surjektivni, jinak false (0)
+ *
+ */
+int cmdSurjective(TRelationItem *rel, TWordListItem *set1, TWordListItem *set2)  /// mikki
+{
+    TRelationItem *tmpRel;
+    while(set2 != NULL)
+    {
+        tmpRel = findRelY(rel, set2->name);
+        if(tmpRel == NULL)
+        {
+            printf("false\n");
+            return false;
+        }
+        if(!strInSet(set1, tmpRel->name1))
+        {
+            printf("false\n");
+            return false;
+        }
+        set2 = set2->next;
+    }
+    printf("true\n");
+    return true;
+}
+
+/** \brief cmdBijective tiskne a vraci true nebo false, jestli je relace rel bijektivni
+ *
+ * \param rel je ukazatel na seznam prvku relace
+ * \param set1 je ukazatel na mnozinu A
+ * \param set2 je ukazatel na mnozinu B
+ * \return vraci true (1), pokud je relace bijektivni, jinak false (0)
+ *
+ */
+int cmdBijective(TRelationItem *rel, TWordListItem *set1, TWordListItem *set2) /// Ondra
+{
+    TRelationItem *tmpRel;
+    TWordListItem *tmpSet;
+    tmpSet = set1;
+    while(tmpSet != NULL)
+    {
+        if(countRelX(rel, tmpSet->name) != 1)
+        {
+            printf("false\n");
+            return false;
+        }
+        tmpRel = findRelX(rel, tmpSet->name);
+        if(tmpRel != NULL)
+        {
+            if(!strInSet(set2, tmpRel->name2))
+            {
+                printf("false\n");
+                return false;
+            }
+        }
+        else
+        {   // toto by teoreticky nemelo nastat, protoze jsme si predtim spocitali, ze je prave 1
+            printf("false\n");
+            return false;
+        }
+        tmpSet = tmpSet->next;
+    }
+    tmpSet = set2;
+    while(tmpSet != NULL)
+    {
+        if(countRelY(rel, tmpSet->name) != 1)
+        {
+            printf("false\n");
+            return false;
+        }
+        tmpRel = findRelY(rel, tmpSet->name);
+        if(tmpRel != NULL)
+        {
+            if(!strInSet(set1, tmpRel->name1))
+            {
+                printf("false\n");
+                return false;
+            }
+        }
+        else
+        {   // toto by teoreticky nemelo nastat, protoze jsme si predtim spocitali, ze je prave 1
+            printf("false\n");
+            return false;
+        }
+        tmpSet = tmpSet->next;
+    }
+    printf("true\n");
+    return true;
+}
+
+/** \brief cmdClosureRef tiskne reflexivni uzaver relace
+ *
+ * \param rel je ukazatel na seznam prvku relace
+ * \param universum je ukazatel na mnozinu univerza
+ * \param resRel je ukazatel na ukazatel na vyslednou relaci
+ *
+ */
+void cmdClosureRef(TRelationItem *rel, TWordListItem *universum, TRelationItem **resRel)
+{
+    assert(resRel != NULL);
+
+    while(rel != NULL)
+    {
+        addRelationItem(resRel, rel->name1, rel->name2);
+        rel = rel->next;
+    }
+    while(universum != NULL)
+    {
+        addRelationItem(resRel, universum->name, universum->name);
+        universum = universum->next;
+    }
+    printRelation(*resRel);
+}
+
+/** \brief cmdClosureSym tiskne symetricky uzaver relace
+ *
+ * \param rel je ukazatel na seznam prvku relace
+ * \param resRel je ukazatel na ukazatel na vyslednou relaci
+ *
+ */
+void cmdClosureSym(TRelationItem *rel, TRelationItem **resRel)
+{
+    assert(resRel != NULL);
+
+    while(rel != NULL)
+    {
+        addRelationItem(resRel, rel->name1, rel->name2);
+        addRelationItem(resRel, rel->name2, rel->name1);
+        rel = rel->next;
+    }
+    printRelation(*resRel);
+}
+
+/** \brief cmdClosureTrans tiskne tranzitivni uzaver relace
+ *
+ * \param rel je ukazatel na seznam prvku relace
+ * \param resRel je ukazatel na ukazatel na vyslednou relaci
+ *
+ */
+void cmdClosureTrans(TRelationItem *rel, TRelationItem **resRel)
+{
+    assert(resRel != NULL);
+
+    while(rel != NULL)
+    {
+        addRelationItem(resRel, rel->name1, rel->name2);
+        rel = rel->next;
+    }
+    TRelationItem *firstRel;
+    TRelationItem *secondRel;
+    bool itemAdded = true;
+
+    while(itemAdded)
+    {
+        itemAdded = false;
+        firstRel = *resRel;
+        while(firstRel != NULL)
+        {
+            secondRel = *resRel;
+            while(secondRel != NULL)
+            {
+                if(firstRel != secondRel && strcmp(firstRel->name2, secondRel->name1) == 0)
+                {
+                    if(findRelXY(*resRel, firstRel->name1, secondRel->name2) == NULL)
+                    {
+                        addRelationItem(resRel, firstRel->name1, secondRel->name2);
+                        itemAdded = true;
+                    }
+                }
+                secondRel = secondRel->next;
+            }
+            firstRel = firstRel->next;
+        }
+    }
+    printRelation(*resRel);
 }
 
 /** \brief strInRelation otestuje, jestli je dvojice retezcu str1 a str2 prvkem relace rel
@@ -351,6 +1247,13 @@ void freeAllLines(TLine *line, int lineNr)
     {
         freeWordList(line[i].set);
         freeRelationList(line[i].relation);
+        if(line[i].command != NULL)
+        {
+            if(line[i].command->name != NULL)
+            {
+                free(line[i].command->name);
+            }
+        }
         free(line[i].command);
     }
     free(line);
@@ -526,7 +1429,7 @@ int processLine(TWordListItem *token, int lineNr, int *wasCommand, TLine *line)
                     case 2:
                     case 3:
                     case 4:
-                        for(int i = 0; i < strlen(token->name); i++)
+                        for(size_t i = 0; i < strlen(token->name); i++)
                         {
                             if(token->name[i] < '0' || token->name[i] > '9')
                             {
@@ -1058,7 +1961,7 @@ int main(int argc, char *argv[])
     }
     else
     {
-        fprintf(stderr, "Spatny pocet vstupnich argumentu. Spustte program jako ./setcal FILE!");
+        fprintf(stderr, "Spatny pocet vstupnich argumentu. Spustte program jako ./setcal FILE!\n");
         return ERR_NR_ARG;
     }
 
