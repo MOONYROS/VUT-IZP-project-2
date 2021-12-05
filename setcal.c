@@ -1939,6 +1939,7 @@ int processFile(char *fileName)
                     // nic se nenactelo, ale jsme uz na konci souboru, tak to je OK
                     break;
                 }
+                fclose(fp);
                 fprintf(stderr, "Chyba na radku %d nebo je radek prazdny!", lineNr + 1);
                 freeAllLines(line, lineNr);
                 return ERR_EMPTY_LINE;
