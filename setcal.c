@@ -1928,6 +1928,7 @@ int processFile(char *fileName)
                 freeWordList(token);
                 if( err != 0 )
                 {
+                    fclose(fp);
                     freeAllLines(line, lineNr);
                     return err;
                 }
