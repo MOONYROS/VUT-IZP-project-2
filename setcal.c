@@ -1,5 +1,6 @@
 /**
- * @file setcal.cz
+ * @file setcal.c
+ *
  * @author  Lukasek Ondrej <xlukas15@stud.fit.vutbr.cz>
  * @author  Koumar Ondrej <xkouma02@stud.fit.vutbr.cz>
  * @author  Dudova Petra <xdudov02@stud.fit.vutbr.cz>
@@ -22,7 +23,8 @@
  * @section DESCRIPTION
  *
  * Program implementuje zakladni matematicke operace nad mnozinami a binarnimi relacemi.
- * Vstupem programu jsou textova data reprezentujici mnoziny a relace a zadani operaci. Vysledek zpracovani je tisknut na standardni vystup.
+ * Vstupem programu jsou textova data reprezentujici mnoziny a relace a zadani operaci.
+ * Vysledek zpracovani je tisknut na standardni vystup.
  */
 
 #include <assert.h>
@@ -38,15 +40,14 @@
 #define MAX_LINE_PARAMS 4
 #define LINES_ALLOC_SIZE 3
 #define UNIVERSUM_LINE 1
+#define JUMP_CONSTANT 2 // protoze radek je index radku + 1 a navic probiha inkrementace + 1
 
 #define ERR_OK 0
 #define ERR_NR_ARG 1
 #define ERR_FOPEN 2
 #define ERR_FCLOSE 3
-//#define ERR_WRONG_CHAR 4
 #define ERR_LAST_LINE_CHARS 5
 #define ERR_MALLOC 6
-//#define ERR_PROCESS_LINE 7
 #define ERR_EMPTY_LINE 8
 #define ERR_WRONG_COMMAND 9
 #define ERR_WRONG_LINE_TYPE 10
@@ -77,7 +78,7 @@
     } \
     if(iline > 0) \
     { \
-        ln = iline - 2; \
+        ln = iline - JUMP_CONSTANT; \
     } \
 }
 
@@ -320,6 +321,29 @@ int countRelX(TRelationItem *rel, char *x)
     return cnt;
 }
 
+/** \brief countRelXSets spocita pocet prvku, ktere maji retezec v definicnim oboru relace a jsou mezi mnozinami set1 a set2
+ *
+ * \param rel je ukazatel na relacni seznam
+ * \param x je ukazatel na retezec, ktery se vyhledava v definicnim oboru relace
+ * \param set1 je ukazatel na mnozinu s definicnim oborem
+ * \param set2 je ukazatel na mnozinu s oborem hodnot
+ * \return vraci pocet nalezenych prvku
+ *
+ */
+int countRelXSets(TRelationItem *rel, TWordListItem *set1, TWordListItem *set2, char *x)
+{
+    int cnt = 0;
+    while(rel != NULL)
+    {
+        if(strcmp(rel->name1, x)==0 && strInSet(set1, rel->name1) == 1 && strInSet(set2, rel->name2) == 1)
+        {
+            cnt++;
+        }
+        rel = rel->next;
+    }
+    return cnt;
+}
+
 /** \brief countRelY spocita pocet prvku, ktere maji retezec v oboru hodnot relace
  *
  * \param rel je ukazatel na relacni seznam
@@ -333,6 +357,29 @@ int countRelY(TRelationItem *rel, char *y)
     while(rel != NULL)
     {
         if(strcmp(rel->name2, y)==0)
+        {
+            cnt++;
+        }
+        rel = rel->next;
+    }
+    return cnt;
+}
+
+/** \brief countRelYSets spocita pocet prvku, ktere maji retezec v oboru hodnot relace a jsou mezi mnozinami set1 a set2
+ *
+ * \param rel je ukazatel na relacni seznam
+ * \param y je ukazatel na retezec, ktery se vyhledava v oboru hodnot relace
+ * \param set1 je ukazatel na mnozinu s definicnim oborem
+ * \param set2 je ukazatel na mnozinu s oborem hodnot
+ * \return vraci pocet nalezenych prvku
+ *
+ */
+int countRelYSets(TRelationItem *rel, TWordListItem *set1, TWordListItem *set2, char *y)
+{
+    int cnt = 0;
+    while(rel != NULL)
+    {
+        if(strcmp(rel->name2, y)==0 && strInSet(set1, rel->name1) == 1 && strInSet(set2, rel->name2) == 1)
         {
             cnt++;
         }
@@ -568,7 +615,7 @@ int cmdSubseteq(TWordListItem *set1, TWordListItem *set2)
     }
 }
 
-/** \brief cmdSubset kontroluje, zda je mno�ina valstn� (true) podmnozinou nebo ne (false)
+/** \brief cmdSubset kontroluje, zda je mnozina vlastni (true) podmnozinou nebo ne (false)
  *
  * \param set1 je ukazatel na prvni mnozinu (pripadnou podmnozinu)
  * \param set2 je ukazatel na druhou mnozinu
@@ -825,24 +872,25 @@ void cmdCodomain(TRelationItem *rel, TWordListItem **resSet)
  */
 int cmdInjective(TRelationItem *rel, TWordListItem *set1, TWordListItem *set2)
 {
-    TRelationItem *tmpRel;
-    while(set2 != NULL)
+    TWordListItem *tmpSet1 = set1;
+    TWordListItem *tmpSet2 = set2;
+    while(tmpSet1 != NULL)
     {
-        if(countRelY(rel, set2->name) >= 2)
+        if(countRelXSets(rel, set1, set2, tmpSet1->name) != 1)
         {
             printf("false\n");
             return false;
         }
-        tmpRel = findRelY(rel, set2->name);
-        if(tmpRel != NULL)
+        tmpSet1 = tmpSet1->next;
+    }
+    while(tmpSet2 != NULL)
+    {
+        if(countRelYSets(rel, set1, set2, tmpSet2->name) >= 2)
         {
-            if(!strInSet(set1, tmpRel->name1))
-            {
-                printf("false\n");
-                return false;
-            }
+            printf("false\n");
+            return false;
         }
-        set2 = set2->next;
+        tmpSet2 = tmpSet2->next;
     }
     printf("true\n");
     return true;
@@ -858,21 +906,25 @@ int cmdInjective(TRelationItem *rel, TWordListItem *set1, TWordListItem *set2)
  */
 int cmdSurjective(TRelationItem *rel, TWordListItem *set1, TWordListItem *set2)
 {
-    TRelationItem *tmpRel;
-    while(set2 != NULL)
+    TWordListItem *tmpSet1 = set1;
+    TWordListItem *tmpSet2 = set2;
+    while(tmpSet1 != NULL)
     {
-        tmpRel = findRelY(rel, set2->name);
-        if(tmpRel == NULL)
+        if(countRelXSets(rel, set1, set2, tmpSet1->name) != 1)
         {
             printf("false\n");
             return false;
         }
-        if(!strInSet(set1, tmpRel->name1))
+        tmpSet1 = tmpSet1->next;
+    }
+    while(tmpSet2 != NULL)
+    {
+        if(countRelYSets(rel, set1, set2, tmpSet2->name) == 0)
         {
             printf("false\n");
             return false;
         }
-        set2 = set2->next;
+        tmpSet2 = tmpSet2->next;
     }
     printf("true\n");
     return true;
@@ -888,55 +940,25 @@ int cmdSurjective(TRelationItem *rel, TWordListItem *set1, TWordListItem *set2)
  */
 int cmdBijective(TRelationItem *rel, TWordListItem *set1, TWordListItem *set2)
 {
-    TRelationItem *tmpRel;
-    TWordListItem *tmpSet;
-    tmpSet = set1;
-    while(tmpSet != NULL)
+    TWordListItem *tmpSet1 = set1;
+    TWordListItem *tmpSet2 = set2;
+    while(tmpSet1 != NULL)
     {
-        if(countRelX(rel, tmpSet->name) != 1)
+        if(countRelXSets(rel, set1, set2, tmpSet1->name) != 1)
         {
             printf("false\n");
             return false;
         }
-        tmpRel = findRelX(rel, tmpSet->name);
-        if(tmpRel != NULL)
-        {
-            if(!strInSet(set2, tmpRel->name2))
-            {
-                printf("false\n");
-                return false;
-            }
-        }
-        else
-        {
-            printf("false\n");
-            return false;
-        }
-        tmpSet = tmpSet->next;
+        tmpSet1 = tmpSet1->next;
     }
-    tmpSet = set2;
-    while(tmpSet != NULL)
+    while(tmpSet2 != NULL)
     {
-        if(countRelY(rel, tmpSet->name) != 1)
+        if(countRelYSets(rel, set1, set2, tmpSet2->name) != 1)
         {
             printf("false\n");
             return false;
         }
-        tmpRel = findRelY(rel, tmpSet->name);
-        if(tmpRel != NULL)
-        {
-            if(!strInSet(set1, tmpRel->name1))
-            {
-                printf("false\n");
-                return false;
-            }
-        }
-        else
-        {
-            printf("false\n");
-            return false;
-        }
-        tmpSet = tmpSet->next;
+        tmpSet2 = tmpSet2->next;
     }
     printf("true\n");
     return true;
@@ -1028,29 +1050,6 @@ void cmdClosureTrans(TRelationItem *rel, TRelationItem **resRel)
     }
     printRelation(*resRel);
 }
-
-/** \brief strInRelation otestuje, jestli je dvojice retezcu str1 a str2 prvkem relace rel
- *
- * \param rel je ukazatel na relaci
- * \param str1 je prvni prvek relace, ktery hledame
- * \param str2 je druhy prvek relace, ktery hledame
- * \return vraci 1, kdyz je dvojice v relaci nalezena, jinak 0
- *
- */
- /*
-int strInRelation(TRelationItem *rel, char *str1, char *str2)
-{
-    while(rel != NULL)
-    {
-        if(strcmp(rel->name1, str1) == 0 && strcmp(rel->name2, str2) == 0 )
-        {
-            return 1;
-        }
-        rel = rel->next;
-    }
-    return 0;
-}
-*/
 
 /** \brief freeWordList uvolni pamet z celeho seznamu retezcu, vcetne retezcu o kterych predpoklada, ze jsou alokovane dynamicky
  *
@@ -1912,7 +1911,7 @@ int processFile(char *fileName)
                 }
                 lineNr++;
                 // pokud mame vice radku nez na kolik je naalokovane pole radku, tak naalokovat dalsi sadu radu
-                if(lineNr>allocatedLines)
+                if(lineNr > allocatedLines)
                 {
                     allocatedLines += LINES_ALLOC_SIZE;
                     line = realloc(line, sizeof(TLine) * allocatedLines);

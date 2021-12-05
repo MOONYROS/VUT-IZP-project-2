@@ -1,5 +1,5 @@
-U a b c d e f
-S a b c
-S d e f
-R (a b) (c d)
-C injective 4 2 3
+U a b c d e f g h mama tata l i j
+S a b c mama
+S d e f g
+R (a d) (b e) (c f) (h g) (c tata) (mama g) (i j) (j g)
+C bijective 4 2 3
