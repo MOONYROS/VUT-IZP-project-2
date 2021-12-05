@@ -1941,7 +1941,7 @@ int processFile(char *fileName)
                     break;
                 }
                 fclose(fp);
-                fprintf(stderr, "Chyba na radku %d nebo je radek prazdny!", lineNr + 1);
+                fprintf(stderr, "Chyba na radku %d nebo je radek prazdny!\n", lineNr + 1);
                 freeAllLines(line, lineNr);
                 return ERR_EMPTY_LINE;
             }
@@ -1949,7 +1949,7 @@ int processFile(char *fileName)
 
         if(fclose(fp) != 0)
         {
-            fprintf(stderr, "Nepodarilo se zavrit vstupni soubor!");
+            fprintf(stderr, "Nepodarilo se zavrit vstupni soubor!\n");
             freeAllLines(line, lineNr);
             return ERR_FCLOSE;
         }
