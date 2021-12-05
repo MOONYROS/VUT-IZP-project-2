@@ -1,6 +1,9 @@
 /**
  * @file setcal.cz
- * @author  Ondrej Lukasek <ondrej@lukasek.cz>
+ * @author  Lukasek Ondrej <xlukas15@stud.fit.vutbr.cz>
+ * @author  Koumar Ondrej <xkouma02@stud.fit.vutbr.cz>
+ * @author  Dudova Petra <xdudov02@stud.fit.vutbr.cz>
+ * @author  Fukarova Michaela <xfukar00@stud.fit.vutbr.cz>
  * @version 0.1
  *
  * @section LICENSE
@@ -18,7 +21,8 @@
  *
  * @section DESCRIPTION
  *
- * Set calculator reads file, that describes sets and relations and calculates math operations and displays result.
+ * Program implementuje zakladni matematicke operace nad mnozinami a binarnimi relacemi.
+ * Vstupem programu jsou textova data reprezentujici mnoziny a relace a zadani operaci. Vysledek zpracovani je tisknut na standardni vystup.
  */
 
 #include <assert.h>
@@ -345,7 +349,7 @@ int countRelY(TRelationItem *rel, char *y)
  */
 int countElements(TWordListItem *set1)
 {
-    int elementCount = 0; // elementCount pocita jednotlive prvky v set1
+    int elementCount = 0;
     while(set1 != NULL)
     {
         elementCount++;
@@ -365,7 +369,7 @@ void addRelationItem(TRelationItem **prel, char *name1, char *name2)
 {
     assert(prel != NULL);
 
-    if(findRelXY(*prel, name1, name2) != NULL) // test, jestli dvojice uz je v relaci obsazena
+    if(findRelXY(*prel, name1, name2) != NULL)
     {
         return;
     }
@@ -416,7 +420,7 @@ void cmdCard(TWordListItem *set1)
  * \param *resSet je ukazatel na ukazatel na vyslednou mnozinu
  *
  */
-void cmdComplement(TWordListItem *set1, TWordListItem *universum, TWordListItem **resSet) /// Petana
+void cmdComplement(TWordListItem *set1, TWordListItem *universum, TWordListItem **resSet)
 {
     assert(resSet != NULL);
 
@@ -438,7 +442,7 @@ void cmdComplement(TWordListItem *set1, TWordListItem *universum, TWordListItem 
  * \param resSet je ukazatel na ukazatel, do ktereho je ulozena vysledna mnozina
  *
  */
-void cmdUnion(TWordListItem *set1, TWordListItem *set2, TWordListItem **resSet) /// mikki
+void cmdUnion(TWordListItem *set1, TWordListItem *set2, TWordListItem **resSet)
 {
     assert(resSet != NULL);
 
@@ -506,7 +510,7 @@ void cmdMinus(TWordListItem *set1, TWordListItem *set2, TWordListItem **resSet)
  * \return vraci true (1), pokud je mnozina set1 podmnozinou mnoziny set1, jinak false (0)
  *
  */
-int cmdSubseteqNoPrint(TWordListItem *set1, TWordListItem *set2) /// Ondra
+int cmdSubseteqNoPrint(TWordListItem *set1, TWordListItem *set2)
 {
     while (set1 != NULL)
     {
@@ -550,7 +554,7 @@ int cmdEqualsNoPrint(TWordListItem *set1, TWordListItem *set2)
  * \return vraci true (1), pokud je mnozina set1 podmnozinou mnoziny set1, jinak false (0)
  *
  */
-int cmdSubseteq(TWordListItem *set1, TWordListItem *set2) /// Ondra
+int cmdSubseteq(TWordListItem *set1, TWordListItem *set2)
 {
     if(cmdSubseteqNoPrint(set1, set2))
     {
@@ -571,7 +575,7 @@ int cmdSubseteq(TWordListItem *set1, TWordListItem *set2) /// Ondra
  * \return true pokud je set1 vlastni podmnozinou, false pokud neni
  *
  */
-int cmdSubset(TWordListItem *set1, TWordListItem *set2)    /// Petana
+int cmdSubset(TWordListItem *set1, TWordListItem *set2)
 {
     if(!(cmdEqualsNoPrint(set1, set2))&&(cmdSubseteqNoPrint(set1, set2)))
     {
@@ -592,7 +596,7 @@ int cmdSubset(TWordListItem *set1, TWordListItem *set2)    /// Petana
  * \return vraci true (1), pokud jsou si mnoziny rovny, jinak false (0)
  *
  */
-int cmdEquals(TWordListItem *set1, TWordListItem *set2)    /// mikki - upravil MOONYROS
+int cmdEquals(TWordListItem *set1, TWordListItem *set2)
 {
     if(cmdEqualsNoPrint(set1, set2))
     {
@@ -618,7 +622,6 @@ int cmdSelect(TWordListItem *set1)
     {
         int items = countElements(set1);
         int nrSeek = rand() % items;
-        // printf("mame %d prvku a posuneme se %d krat\n", items, nrSeek);
         while(nrSeek > 0)
         {
             set1 = set1->next;
@@ -661,7 +664,7 @@ int cmdReflexive(TRelationItem *rel, TWordListItem *universum)
  * \return vraci true (1), pokud je relace symetricka, jinak false (0)
  *
  */
-int cmdSymmetric(TRelationItem *rel) /// Petana
+int cmdSymmetric(TRelationItem *rel)
 {
     TRelationItem *tmpRel = rel;
     while(tmpRel != NULL)
@@ -695,7 +698,7 @@ int cmdSymmetric(TRelationItem *rel) /// Petana
  * \return vraci true (1), pokud je relace antisymetricka, jinak false (0)
  *
  */
-int cmdAntisymmetric(TRelationItem *rel) /// mikki
+int cmdAntisymmetric(TRelationItem *rel)
 {
     TRelationItem *origRel = rel;
     while(rel != NULL)
@@ -782,7 +785,7 @@ int cmdFunction(TRelationItem *rel)
  * \param resSet je ukazatel na ukazatel na vysledny definicni obor
  *
  */
-void cmdDomain(TRelationItem *rel, TWordListItem **resSet) /// Petana
+void cmdDomain(TRelationItem *rel, TWordListItem **resSet)
 {
     assert(resSet != NULL);
 
@@ -820,7 +823,7 @@ void cmdCodomain(TRelationItem *rel, TWordListItem **resSet)
  * \return vraci true (1), pokud je relace injektivni, jinak false (0)
  *
  */
-int cmdInjective(TRelationItem *rel, TWordListItem *set1, TWordListItem *set2)   /// Petana
+int cmdInjective(TRelationItem *rel, TWordListItem *set1, TWordListItem *set2)
 {
     TRelationItem *tmpRel;
     while(set2 != NULL)
@@ -853,7 +856,7 @@ int cmdInjective(TRelationItem *rel, TWordListItem *set1, TWordListItem *set2)  
  * \return vraci true (1), pokud je relace surjektivni, jinak false (0)
  *
  */
-int cmdSurjective(TRelationItem *rel, TWordListItem *set1, TWordListItem *set2)  /// mikki
+int cmdSurjective(TRelationItem *rel, TWordListItem *set1, TWordListItem *set2)
 {
     TRelationItem *tmpRel;
     while(set2 != NULL)
@@ -883,7 +886,7 @@ int cmdSurjective(TRelationItem *rel, TWordListItem *set1, TWordListItem *set2) 
  * \return vraci true (1), pokud je relace bijektivni, jinak false (0)
  *
  */
-int cmdBijective(TRelationItem *rel, TWordListItem *set1, TWordListItem *set2) /// Ondra
+int cmdBijective(TRelationItem *rel, TWordListItem *set1, TWordListItem *set2)
 {
     TRelationItem *tmpRel;
     TWordListItem *tmpSet;
@@ -905,7 +908,7 @@ int cmdBijective(TRelationItem *rel, TWordListItem *set1, TWordListItem *set2) /
             }
         }
         else
-        {   // toto by teoreticky nemelo nastat, protoze jsme si predtim spocitali, ze je prave 1
+        {
             printf("false\n");
             return false;
         }
@@ -929,7 +932,7 @@ int cmdBijective(TRelationItem *rel, TWordListItem *set1, TWordListItem *set2) /
             }
         }
         else
-        {   // toto by teoreticky nemelo nastat, protoze jsme si predtim spocitali, ze je prave 1
+        {
             printf("false\n");
             return false;
         }
@@ -1559,7 +1562,6 @@ TWordListItem * getLineFromFile(FILE *fp)
     char token[MAX_ITEM_LEN];
 
     char ch = fgetc(fp);
-    // skipWhitesFromFile(fp, &ch);
     // jestli jsme v LINUXu a mame DOS file, tak preskocime '\r'
     if(ch == '\r')
     {
@@ -1955,8 +1957,8 @@ int processFile(char *fileName)
 
         // jen pro ladeni, na konci vypis stavu radku
         // ve finalni verzi nasledujici dva radky zakomentovat
-        printf("\n... a to je konec programu\ntohle mame v pameti radku:\n\n");
-        printAllLines(line, lineNr);
+        //printf("\n... a to je konec programu\ntohle mame v pameti radku:\n\n");
+        //printAllLines(line, lineNr);
 
         freeAllLines(line, lineNr);
     }
