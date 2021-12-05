@@ -29,6 +29,12 @@
 #include <stdbool.h>
 #include <time.h>
 
+#define MAX_ITEM_LEN 30
+#define MAX_LINES 1000
+#define MAX_LINE_PARAMS 4
+#define LINES_ALLOC_SIZE 3
+#define UNIVERSUM_LINE 1
+
 #define ERR_OK 0
 #define ERR_NR_ARG 1
 #define ERR_FOPEN 2
@@ -40,7 +46,6 @@
 #define ERR_EMPTY_LINE 8
 #define ERR_WRONG_COMMAND 9
 #define ERR_WRONG_LINE_TYPE 10
-
 #define PL_ERR_INVALID_CMD 11
 #define PL_ERR_INVALID_CHAR 12
 #define PL_ERR_TOO_LONG_ITEM 13
@@ -48,16 +53,14 @@
 #define PL_ERR_REL_AFTER_COMMAND 15
 #define PL_ERR_UNIVERSE_NOT_LINE1 16
 #define PL_ERR_BAD_CMD_PARAM 17
-#define PL_ERR_MALLOC_CMD 18
 #define PL_ERR_ITEM_NOT_IN_UNIVERSE 19
 #define PL_ERR_ITEM_IN_COMMANDS 20
 #define PL_ERR_ITEM_IN_SET_ALREADY 21
 #define PL_ERR_REL_ITEM_MISSING 22
 #define PL_ERR_MISSING_PARENTHESIS 23
 #define PL_ERR_ITEMS_IN_RELATION_ALREADY 24
-
-#define ERR_CMD_LINE_NOEX 1
-#define ERR_CMD_NOEX 2
+#define ERR_CMD_LINE_NOEX 101
+#define ERR_CMD_NOEX 102
 
 #define STR_WRONG_PARAM_LINE "ERROR: Chybny parametr prikazu (neexistujici radek?) na radku %d!\n"
 
@@ -74,20 +77,18 @@
     } \
 }
 
-#define MAX_ITEM_LEN 30
-#define MAX_LINES 1000
-#define MAX_LINE_PARAMS 4
-#define LINES_ALLOC_SIZE 3
-#define UNIVERSUM_LINE 1
-
-#define ERR_MALLOC 6
-
+/** \brief Jednoduchy seznam retezcu pouzivany pro tokeny prikazove radky a mnoziny
+ *
+ */
 typedef struct _TWordListItem
 {
     char *name;
     struct _TWordListItem *next;
 } TWordListItem;
 
+/** \brief Seznam dvojic retezcu pouzivany pro relace
+ *
+ */
 typedef struct _TRelationItem
 {
     char *name1;
@@ -95,19 +96,47 @@ typedef struct _TRelationItem
     struct _TRelationItem *next;
 } TRelationItem;
 
+/** \brief Seznam pouzivany pro prikazy, obsahuje retezec se jmenem prikazu a az 4 operandy
+ *
+ */
 typedef struct _TCommand
 {
     char *name;
     int op[MAX_LINE_PARAMS];
 } TCommand;
 
+/** \brief Prvek dynamciky alokovaneho pole obsahujici informace o jednom radku
+ *
+ */
 typedef struct _TLine
 {
-    char content;
-    TWordListItem *set;
-    TRelationItem *relation;
-    TCommand *command;
+    char content;               /**< Typ obrashu, muze byt 'S', 'R' nebo 'C' (Universum je 'S'et na prvnim radku)
+                                     'C' je prepisovano na 'S' nebo 'R' kdy je znam typ vystupu daneho prikazu*/
+    TWordListItem *set;         /**< ukazatel na mnozinu na radku (pokud existuje nebo NULL)*/
+    TRelationItem *relation;    /**< ukazatel na relaci na radku (pokud existuje nebo NULL)*/
+    TCommand *command;          /**< ukazatel na prikaz na radku (pokud existuje nebo NULL)*/
 } TLine;
+
+
+/** \brief Bezpecne alokuje pamet
+ *         Pokud se pamet nepodari alokovat, jedna se o kritickou chybu a program je ukoncen.
+ *         V tomto jedinem pripade se nevracime a neodalokovavame jiz naalokovane struktury,
+ *         protoze program zhavaroval, nebude pokracovat a system tuto pamet stejne uvolni.
+ * \param size je velikost pameti, kterou je potreba alokovat
+ * \return vraci ukazatel na alakovanou pamet nebo se nevraci vubec (program konci)
+ *
+ */
+void *safeMalloc(size_t size)
+{
+    void *ptr;
+    ptr = malloc(size);
+    if(ptr == NULL)
+    {
+        fprintf(stderr, "ERROR: Nepodarilo se alokovat dostatek mista v pameti.\n");
+        exit(ERR_MALLOC);
+    }
+    return ptr;
+}
 
 /** \brief strInSet otestuje, jestli je retezec str prvkem mnoziny set
  *
@@ -145,15 +174,15 @@ void addSetItem(TWordListItem **pset, char *item)
     }
 
     TWordListItem *next = *pset;
-    *pset = malloc(sizeof(TWordListItem));
-    (*pset)->name = malloc(strlen(item)+1);
+    *pset = safeMalloc(sizeof(TWordListItem));
+    (*pset)->name = safeMalloc(strlen(item)+1);
     strcpy((*pset)->name, item);
     (*pset)->next = next;
 }
 
-/** \brief printWordList vytiskne prvky do mnoziny oddelene ' ' na stdout
+/** \brief printWordList vytiskne prvky seznamu oddelene mezerami ' ' na stdout, zacina mezerou
  *
- * \param set je ukazatel na mnozinu
+ * \param set je ukazatel na seznam retezcu
  *
  */
 void printWordList(TWordListItem *set)
@@ -204,6 +233,13 @@ void printRelation(TRelationItem *rel)
     printf("\n");
 }
 
+/** \brief findRelX najde retezec v definicnim oboru relace a pokud ano, vrati ukazetel na dany prvek relace
+ *
+ * \param rel je ukazatel na relacni seznam
+ * \param x je ukazatel na retezec, ktery se vyhledava v definicnim oboru relace
+ * \return vraci ukazatel na prvek relace s nalezenym x nebo NULL v pripade neuspechu
+ *
+ */
 TRelationItem *findRelX(TRelationItem *rel, char *x)
 {
     while(rel != NULL)
@@ -217,6 +253,13 @@ TRelationItem *findRelX(TRelationItem *rel, char *x)
     return NULL;
 }
 
+/** \brief findRelY najde retezec v oboru hodnot relace a pokud ano, vrati ukazetel na dany prvek relace
+ *
+ * \param rel je ukazatel na relacni seznam
+ * \param y je ukazatel na retezec, ktery se vyhledava v oboru hodnot relace
+ * \return vraci ukazatel na prvek relace s nalezenym y nebo NULL v pripade neuspechu
+ *
+ */
 TRelationItem *findRelY(TRelationItem *rel, char *y)
 {
     while(rel != NULL)
@@ -230,6 +273,15 @@ TRelationItem *findRelY(TRelationItem *rel, char *y)
     return NULL;
 }
 
+/** \brief findRelXY najde prvek s retezci v definicnim oboru i oboru hodnot relace a pokud ano, vrati ukazetel na dany prvek relace
+ *         oba prvky musi byt shodne
+ *
+ * \param rel je ukazatel na relacni seznam
+ * \param x je ukazatel na retezec, ktery se vyhledava v definicnim oboru relace
+ * \param y je ukazatel na retezec, ktery se vyhledava v oboru hodnot relace
+ * \return vraci ukazatel na prvek relace s nalezenym x a y nebo NULL v pripade neuspechu
+ *
+ */
 TRelationItem *findRelXY(TRelationItem *rel, char *x, char *y)
 {
     while(rel != NULL)
@@ -243,6 +295,13 @@ TRelationItem *findRelXY(TRelationItem *rel, char *x, char *y)
     return NULL;
 }
 
+/** \brief countRelX spocita pocet prvku, ktere maji retezec v definicnim oboru relace
+ *
+ * \param rel je ukazatel na relacni seznam
+ * \param x je ukazatel na retezec, ktery se vyhledava v definicnim oboru relace
+ * \return vraci pocet nalezenych prvku
+ *
+ */
 int countRelX(TRelationItem *rel, char *x)
 {
     int cnt = 0;
@@ -257,6 +316,13 @@ int countRelX(TRelationItem *rel, char *x)
     return cnt;
 }
 
+/** \brief countRelY spocita pocet prvku, ktere maji retezec v oboru hodnot relace
+ *
+ * \param rel je ukazatel na relacni seznam
+ * \param y je ukazatel na retezec, ktery se vyhledava v oboru hodnot relace
+ * \return vraci pocet nalezenych prvku
+ *
+ */
 int countRelY(TRelationItem *rel, char *y)
 {
     int cnt = 0;
@@ -279,7 +345,7 @@ int countRelY(TRelationItem *rel, char *y)
  */
 int countElements(TWordListItem *set1)
 {
-    int elementCount = 0; /**< elementCount pocita jednotlive prvky v set1 */
+    int elementCount = 0; // elementCount pocita jednotlive prvky v set1
     while(set1 != NULL)
     {
         elementCount++;
@@ -299,31 +365,16 @@ void addRelationItem(TRelationItem **prel, char *name1, char *name2)
 {
     assert(prel != NULL);
 
-    if(findRelXY(*prel, name1, name2) != NULL) /**< test, jestli dvojice uz je v relaci obsazena */
+    if(findRelXY(*prel, name1, name2) != NULL) // test, jestli dvojice uz je v relaci obsazena
     {
         return;
     }
 
     TRelationItem *next = *prel;
-    *prel = malloc(sizeof(TRelationItem));
-    if(*prel == NULL)
-    {
-        fprintf(stderr, "ERROR: Nepodarilo se alokovat dostatek mista v pameti.\n");
-        exit(ERR_MALLOC);
-    }
-    (*prel)->name1 = malloc(strlen(name1)+1);
-    if((*prel)->name1 == NULL)
-    {
-        fprintf(stderr, "ERROR: Nepodarilo se alokovat dostatek mista v pameti.\n");
-        exit(ERR_MALLOC);
-    }
+    *prel = safeMalloc(sizeof(TRelationItem));
+    (*prel)->name1 = safeMalloc(strlen(name1)+1);
     strcpy((*prel)->name1, name1);
-    (*prel)->name2 = malloc(strlen(name2)+1);
-    if((*prel)->name2 == NULL)
-    {
-        fprintf(stderr, "ERROR: Nepodarilo se alokovat dostatek mista v pameti.\n");
-        exit(ERR_MALLOC);
-    }
+    (*prel)->name2 = safeMalloc(strlen(name2)+1);
     strcpy((*prel)->name2, name2);
     (*prel)->next = next;
 }
@@ -513,7 +564,7 @@ int cmdSubseteq(TWordListItem *set1, TWordListItem *set2) /// Ondra
     }
 }
 
-/** \brief cmdSubset kontroluje, zda je množina valstní (true) podmnozinou nebo ne (false)
+/** \brief cmdSubset kontroluje, zda je mnoï¿½ina valstnï¿½ (true) podmnozinou nebo ne (false)
  *
  * \param set1 je ukazatel na prvni mnozinu (pripadnou podmnozinu)
  * \param set2 je ukazatel na druhou mnozinu
@@ -1035,7 +1086,7 @@ void freeRelationList(TRelationItem *item)
     }
 }
 
-/** \brief hasOnlyEnLetters zkontorluje, jestli retezec obsahuje pouze mala a velka pismena anglicke abecedy
+/** \brief hasOnlyEnLetters zkontroluje, jestli retezec obsahuje pouze mala a velka pismena anglicke abecedy
  *
  * \param str je retezec, ktery se ma zkontrolovat
  * \return vraci 1 pokud retezec obsahuje jen mala a velka pismena anglicke abecedy, jinak 0
@@ -1151,7 +1202,7 @@ int strInSetCreateCmds(char *str)
     return strInArray(str, setCreateCmds, sizeof(setCreateCmds)/sizeof(char*));
 }
 
-/** \brief strInSetCreateCmds zjisti, jesli se retezec str vyskytuje mezi prikazy, ktere vytvareji mnozinu
+/** \brief strInRelationCreateCmds zjisti, jesli se retezec str vyskytuje mezi prikazy, ktere vytvareji relaci
  *
  * \param str je hledany retezec
  * \return vraci 1, kdyz je retezec mezi prikazy nalezen, jinak 0
@@ -1455,18 +1506,8 @@ int processLine(TWordListItem *token, int lineNr, int *wasCommand, TLine *line)
                 param++;
                 token=token->next;
             }
-            line[lineNr-1].command = malloc(sizeof(TCommand));
-            if(line[lineNr-1].command ==  NULL)
-            {
-                fprintf(stderr, "ERROR: Nelze alokovat pamet pro ulozeni prikazu!\n");
-                exit(ERR_MALLOC);
-            }
-            line[lineNr-1].command->name = malloc(strlen(command)+1);
-            if(line[lineNr-1].command->name ==  NULL)
-            {
-                fprintf(stderr, "ERROR: Nelze alokovat pamet pro ulozeni jmena prikazu!\n");
-                exit(ERR_MALLOC);
-            }
+            line[lineNr-1].command = safeMalloc(sizeof(TCommand));
+            line[lineNr-1].command->name = safeMalloc(strlen(command)+1);
             strcpy(line[lineNr-1].command->name, command);
             for(int i = 0; i < MAX_LINE_PARAMS; i++)
             {
@@ -1498,7 +1539,7 @@ int processLine(TWordListItem *token, int lineNr, int *wasCommand, TLine *line)
  */
 void skipWhitesFromFile(FILE *fp, char *ch)
 {
-    while(*ch == ' ' || *ch == '\t')
+    while(*ch == ' ' || *ch == '\t' || *ch == '\r')
     {
         *ch = fgetc(fp);
     }
@@ -1513,12 +1554,17 @@ void skipWhitesFromFile(FILE *fp, char *ch)
 TWordListItem * getLineFromFile(FILE *fp)
 {
     TWordListItem *tokenList = NULL;
-    TWordListItem *tmpTokenList;
+    TWordListItem *tmpTokenList = NULL;
     int i = 0;
     char token[MAX_ITEM_LEN];
 
     char ch = fgetc(fp);
-    //skipWhitesFromFile(fp, &ch);
+    // skipWhitesFromFile(fp, &ch);
+    // jestli jsme v LINUXu a mame DOS file, tak preskocime '\r'
+    if(ch == '\r')
+    {
+        ch = fgetc(fp);
+    }
     if(ch != 'U' && ch != 'S' && ch != 'R' && ch != 'C')
     {
         return NULL;
@@ -1529,7 +1575,7 @@ TWordListItem * getLineFromFile(FILE *fp)
         {
             if(i == 0)
             {
-                // mame konec radku, tak prazdny retezec uz pridavat nebudeme
+                // mame konec radku, asi diky mezeram na konci, jinak jsme se sem dostat nemohli, tak prazdny retezec uz pridavat nebudeme
                 //fprintf(stderr, "ERROR: Prazdny token, mezery na konci radku!\n");
                 return tokenList;
             }
@@ -1539,12 +1585,7 @@ TWordListItem * getLineFromFile(FILE *fp)
             // musime drzet poradi na radku kvuli prikazum
             if(tokenList==NULL)
             {
-                tokenList = malloc(sizeof(TWordListItem));
-                if(tokenList == NULL)
-                {
-                    fprintf(stderr, "ERROR: Nepodarilo se alokovat dostatek mista v pameti.\n");
-                    exit(ERR_MALLOC);
-                }
+                tokenList = safeMalloc(sizeof(TWordListItem));
                 tmpTokenList = tokenList;
             }
             else
@@ -1554,27 +1595,11 @@ TWordListItem * getLineFromFile(FILE *fp)
                 {
                     tmpTokenList = tmpTokenList->next;
                 }
-                tmpTokenList->next = malloc(sizeof(TWordListItem));
-                if(tmpTokenList->next == NULL)
-                {
-                    fprintf(stderr, "ERROR: Nepodarilo se alokovat dostatek mista v pameti.\n");
-                    exit(ERR_MALLOC);
-                }
+                tmpTokenList->next = safeMalloc(sizeof(TWordListItem));
                 tmpTokenList = tmpTokenList->next;
             }
-            // kontrola jestli se povedl zalozit novy token
-            if( tmpTokenList==NULL )
-            {
-                fprintf(stderr, "ERROR: Nepodarilo se alokovat pamet pro novy token!\n");
-                return NULL;
-            }
             // zalozit retezec, opet zkontrolovat a naplnit daty
-            tmpTokenList->name = malloc(strlen(token)+1);
-            if( tmpTokenList == NULL )
-            {
-                fprintf(stderr, "ERROR: Nepodarilo se alokovat pamet pro retezec v novem tokenu!\n");
-                exit(ERR_MALLOC);
-            }
+            tmpTokenList->name = safeMalloc(strlen(token)+1);
             strcpy(tmpTokenList->name, token);
             tmpTokenList->next = NULL;
             // jestli duvod konce tokenu byl konec radku, tak koncime, jinak preskocit mezery a vynulovat pocitadlo znaku, bude asi dalsi token
@@ -1598,7 +1623,12 @@ TWordListItem * getLineFromFile(FILE *fp)
                 return NULL;
             }
             ch = fgetc(fp);
-        }
+            // jestli jsme v LINUXu a mame DOS file, tak preskocime '\r'
+            if(ch == '\r')
+            {
+                ch = fgetc(fp);
+            }
+       }
     }
 
     if(tokenList != NULL)
@@ -1862,12 +1892,8 @@ int processFile(char *fileName)
 
         // definujeme a vytvorime vynulovane pole s informacemi pro max 1000 (MAX_LINES) radku vstupniho souboru
         TLine *line;
-        line = malloc(sizeof(TLine) * allocatedLines);
-        if(line == NULL)
-        {
-            fprintf(stderr, "ERROR: Nepodarilo se alokovat dostatek pameti pro pole radku!\n");
-            exit(ERR_MALLOC);
-        }
+        line = safeMalloc(sizeof(TLine) * allocatedLines);
+        // vynulovat oblast, aby byly nulove ukazatele na prvky, zadne zatim nejsou
         memset(line, 0, sizeof(TLine) * allocatedLines);
 
         // prochazi cely soubor
@@ -1883,15 +1909,17 @@ int processFile(char *fileName)
                     return ERR_LAST_LINE_CHARS;
                 }
                 lineNr++;
+                // pokud mame vice radku nez na kolik je naalokovane pole radku, tak naalokovat dalsi sadu radu
                 if(lineNr>allocatedLines)
                 {
                     allocatedLines += LINES_ALLOC_SIZE;
                     line = realloc(line, sizeof(TLine) * allocatedLines);
                     if(line == NULL)
                     {
-                        fprintf(stderr, "ERROR: Nepodarilo se alokovat dostatek pameti pro pole radku!\n");
+                        fprintf(stderr, "ERROR: Nepodarilo se alokovat dostatek pameti pri rozsirovani pole radku!\n");
                         exit(ERR_MALLOC);
                     }
+                    // vynulovat nove naalokovanou oblast
                     memset(line + allocatedLines - LINES_ALLOC_SIZE, 0, sizeof(TLine) * LINES_ALLOC_SIZE);
                 }
                 //printf("Nacteny radek = "); printSet(token);
@@ -1925,6 +1953,8 @@ int processFile(char *fileName)
 
         processCommands(line, lineNr);
 
+        // jen pro ladeni, na konci vypis stavu radku
+        // ve finalni verzi nasledujici dva radky zakomentovat
         printf("\n... a to je konec programu\ntohle mame v pameti radku:\n\n");
         printAllLines(line, lineNr);
 

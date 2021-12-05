@@ -1,5 +1,5 @@
 U a b c d e f
 S a b c
-R (a b)
-C empty 5
-C card 1
+S d e f
+R (a b) (c d)
+C injective 4 2 3
