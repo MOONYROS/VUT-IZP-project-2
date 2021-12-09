@@ -19,7 +19,7 @@ So this is my, or maybe I should say our first group project in the first degree
 
 <br> Then there were the other three structures that were aimed to work with a certain type of line (set, relation or command). These were recongnised by the first character (contents) in the line. To give a graphic explanation (which is in my opinion better for this case) I'll use a diagram model of these four structures.
 
-<img>
+<img src="https://raw.githubusercontent.com/MOONYROS/setcal/main/diagrams.jpg">
 
 <h2> Basic explanation of the process </h2>
 <p> First of all, I'll call the processFile function that basically reads the whole file and after that, all the lines are divided into the structures (each line could be set, relation or command) using the processLine function. </p>
