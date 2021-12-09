@@ -2,10 +2,21 @@
 So this is my, or maybe I should say our first group project in the first degree of BUT FIT bachelor's degree.
 <p> The basic motivation (except to pass the semester) was to learn how to work with data structures, reading and processing files in C. </p>
 <p> The goal of this project was to implement all the functions from the subject of discrete mathematics to a single-file program. The functions included working with universum, sets, relations and commands which represent the functions of discrete mathematics (surjectivity, transitivity, reflexivity, etc.). </p>
+
+<h2> Authors </h2>
+<ul>
+  <li> <a href="https://github.com/MOONYROS"> MOONYROS </a> (xlukas15)
+  <li> <a href="https://github.com/Kumaros"> Kumaros </a> (xkouma02)
+  <li> <a href="https://github.com/Petanna"> Petanna </a> (xdudov02)
+  <li> <a href="https://github.com/mikkina"> mikkina </a> (xfukar00)
+</ul>
+
 <h1> Basic structure of the program </h1>
 <p> In this part of the README, I would like to focus on describing how the program works. </p>
+
 <h2> File input </h2>
 <p> This program was supposed to take the name of the file in the argument section from the command line (that means in UNIX, the program was meant to be run like ./setcal FILENAME). I think that not much more description is needed for this part of the program...</p>
+
 <h2> Data structures </h2>
 <p> As it was one of the main goals, it should be no surprise that the first thing I started working on were the structures.
 <br> There were 4 structures I used. 
