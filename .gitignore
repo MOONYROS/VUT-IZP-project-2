@@ -57,5 +57,4 @@ obj/
 *.cbp
 *.depend
 *.layout
-rel.txt
-sets.txt
+*.txt
