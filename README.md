@@ -6,7 +6,7 @@ So this is my, or maybe I should say our first group project in the first degree
 <h2> Authors </h2>
 <ul>
   <li> <a href="https://github.com/MOONYROS"> MOONYROS </a> (xlukas15)
-  <li> <a href="https://github.com/Kumaros"> Kumaros </a> (xkouma02)
+  <li> <a href="https://github.com/Kumismar"> Kumismar </a> (xkouma02)
   <li> <a href="https://github.com/Petanna"> Petanna </a> (xdudov02)
   <li> <a href="https://github.com/mikkina"> mikkina </a> (xfukar00)
 </ul>
