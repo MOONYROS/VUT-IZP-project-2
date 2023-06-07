@@ -19,7 +19,7 @@ In this part of the README, I would like to focus on describing how the program 
 
 ### File input
 
-This program was supposed to take the name of the file in the argument section from the command line (that means in **UNIX**, the program was meant to be run like `./setcal <filename>`) where filename is a name of the file, where the results will be written. I think that not much more description is needed for this part of the program...
+This program was supposed to take the name of the file in the argument section from the command line (that means in **UNIX**, the program was meant to be run like `./setcal <filename>`) where `<filename>` is a name of the file, where the results will be written. I think that not much more description is needed for this part of the program...
 
 ### Data structures
 
