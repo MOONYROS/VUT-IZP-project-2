@@ -1,5 +1,0 @@
-U a b c d e f
-S a b c
-R (a b)
-C empty 5
-C card 1

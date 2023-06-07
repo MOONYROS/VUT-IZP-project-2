@@ -1,9 +1,0 @@
-U dad mom girl boy man woman A B C D E F X Y Z ZZ
-R (dad boy) (dad girl) (mom boy) (mom girl)
-R (dad man) (boy man) (mom woman) (girl woman)
-R (A B) (B D) (C D) (D E)
-R (A A) (B B) (C C)
-R (A B) (D E) (B F) (C C)
-R (A X) (B Y) (C ZZ)
-R (A X) (X B) (C C) (A B)
-C transitive 8
