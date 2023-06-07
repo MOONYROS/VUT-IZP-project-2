@@ -1,4 +1,4 @@
-# VUT IZP project 2
+# VUT IZP project 2 (2021/2022)
 
 So this is my, or maybe I should say our first group project in the first degree of **BUT FIT bachelor's degree**.
 
